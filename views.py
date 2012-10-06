@@ -1,23 +1,6 @@
-from app import app, db, api
-from peewee import *
-import logging
+from app import app
 from flask import request
-from datetime import datetime
-
-
-class RawUpload(db.Model):
-    data = TextField()
-    is_xhr = BooleanField()
-    remote_ip = CharField(max_length=64)
-    headers = TextField()
-    created = DateTimeField(default=datetime.now)
-
-    def __unicode__(self):
-        return self.data
-
-
-RawUpload.create_table(fail_silently=True)
-api.register(RawUpload)
+from models import RawUpload
 
 
 @app.route('/')

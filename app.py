@@ -2,8 +2,6 @@ from flask import Flask
 from flask_peewee.db import Database
 import urlparse
 import os
-from flask_peewee.rest import RestAPI
-
 
 if 'HEROKU_POSTGRESQL_BROWN_URL' in os.environ:
     url = urlparse.urlparse(os.environ['HEROKU_POSTGRESQL_BROWN_URL'])
@@ -29,5 +27,3 @@ FLd7e7L3xflb4Ll6dAEONUoe54mdrbdjQqlbdNeBm3ap37i98JP4K'
 app = Flask(__name__)
 app.config['DATABASE'] = DATABASE
 db = Database(app)
-api = RestAPI(app)
-api.setup()
