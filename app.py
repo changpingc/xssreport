@@ -6,8 +6,8 @@ from flask_peewee.rest import RestAPI
 
 urlparse.uses_netloc.append('postgres')
 
-if 'DATABASE_URL' in os.environ:
-    url = urlparse.urlparse(os.environ['DATABASE_URL'])
+if 'HEROKU_POSTGRESQL_BROWN_URL' in os.environ:
+    url = urlparse.urlparse(os.environ['HEROKU_POSTGRESQL_BROWN_URL'])
 
     DATABASE = {
         'engine': 'peewee.PostgresqlDatabase',

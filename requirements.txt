@@ -7,3 +7,4 @@ flask-peewee==0.5.6
 peewee==1.0.0
 wsgiref==0.1.2
 wtf-peewee==0.1.5
+psycopg2
