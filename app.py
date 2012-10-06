@@ -4,23 +4,24 @@ import urlparse
 import os
 from flask_peewee.rest import RestAPI
 
-urlparse.uses_netloc.append('postgres')
 
 if 'HEROKU_POSTGRESQL_BROWN_URL' in os.environ:
     url = urlparse.urlparse(os.environ['HEROKU_POSTGRESQL_BROWN_URL'])
 
     DATABASE = {
         'engine': 'peewee.PostgresqlDatabase',
-        'name': url.path[1:],
+        'user': url.username,
         'password': url.password,
         'host': url.hostname,
         'port': url.port,
+        'name': url.path[1:]
     }
 else:
     DATABASE = {
         'name': 'xssreport.db',
         'engine': 'peewee.SqliteDatabase',
     }
+    print "Using SQLite!"
 
 SECRET_KEY = 'ogIiTdbqCslr7g5zwvmA7smpwh4ZTYUAL7g2ossNhV5u8VR\
 FLd7e7L3xflb4Ll6dAEONUoe54mdrbdjQqlbdNeBm3ap37i98JP4K'
