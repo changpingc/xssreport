@@ -1,6 +1,7 @@
 from app import app
 from flask import request
 from models import RawUpload
+from flask import Response
 
 
 @app.route('/')
@@ -12,12 +13,12 @@ def hello():
 def img():
     data = request.args.get('d', None)
     if data is None:
-        return "missing data"
+        return Response("missing data", mimetype='image/bmp')
     else:
         row = RawUpload.create(data=data, is_xhr=request.is_xhr,
             headers=unicode(request.headers),
             remote_ip=request.headers.get('X-Forwarded-For', request.remote_addr))
-        return "ok"
+        return Response("ok", mimetype='image/bmp')
 
 
 @app.route('/upload/', methods=['POST', ])
