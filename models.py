@@ -1,3 +1,4 @@
+#coding=utf8
 from app import db, app
 from peewee import *
 from datetime import datetime, timedelta
@@ -27,11 +28,21 @@ class Upload(db.Model):
 class UploadResource(RestResource):
     def prepare_data(self, obj, data):
         del data['is_xhr']
-        del data['data']
 
         h = request.args.get('headers', None)
-        if not h:
+        if h is not None:
             del data['headers']
+        d = request.args.get('data', None)
+        if d is not None:
+            del data['data']
+
+        try:
+            j = json.loads(obj.data)
+            if j['site'] == "bdfz":
+                data['username'] = j['username'].replace('当前用户: ', '')
+        except:
+            pass
+
         utc_8 = obj.created + timedelta(hours=8)
         data['created'] = utc_8.strftime("%Y-%m-%d (%a) %H:%M:%S")
         return data
