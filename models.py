@@ -29,11 +29,11 @@ class UploadResource(RestResource):
     def prepare_data(self, obj, data):
         del data['is_xhr']
 
-        h = request.args.get('headers', None)
-        if h:
+        h = request.args.get('headers', '')
+        if len(h):
             del data['headers']
-        d = request.args.get('data', None)
-        if d:
+        d = request.args.get('data', '')
+        if len(d):
             del data['data']
 
         try:
