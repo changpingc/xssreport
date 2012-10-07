@@ -38,7 +38,7 @@ class UploadResource(RestResource):
 
         j = json.loads(obj.data)
         if j.get('site', '') == "bdfz":
-            data['username'] = j.get('username', '').replace('当前用户:&nbsp;', '')
+            data['username'] = j.get('username', '').replace(u'当前用户:&nbsp;', '')
 
         utc_8 = obj.created + timedelta(hours=8)
         data['created'] = utc_8.strftime("%Y-%m-%d (%a) %H:%M:%S")
