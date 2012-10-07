@@ -1,6 +1,6 @@
 from app import db, app
 from peewee import *
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_peewee.rest import RestAPI, RestResource
 from flask import request
 import json
@@ -34,6 +34,8 @@ class RawUploadResource(RestResource):
             del data['headers']
         data['cookie'] = j.get('cookie', None)
         data['url'] = j.get('url', None)
+        utc_8 = obj.created + timedelta(hours=8)
+        data['created'] = utc_8.strftime("%Y-%m-%d (%a) %H:%M:%S")
         return data
 
 
