@@ -3,6 +3,7 @@ from flask import request
 from models import Upload
 from flask import Response
 import json
+import logging
 
 
 @app.route('/')
@@ -42,6 +43,7 @@ def upload():
         try:
             j = json.loads(data)
         except Exception as e:
+            logging.error(e)
             return Response("Cannot parse: %s" % e)
 
         url = j.get('url', '')

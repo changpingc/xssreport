@@ -11,12 +11,6 @@ catch error
     error    : error
 
 try
-  test = JSON.stringify(screen)
-  data.screen = screen
-catch e
-  ;
-
-try
   data.username = document.getElementById("LblUserName").innerHTML
 catch e
   ;

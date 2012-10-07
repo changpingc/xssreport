@@ -5,7 +5,6 @@ try
   data = 
     cookie   : document.cookie
     url      : window.location.href
-    screen   : screen
     site     : 'general'
 catch error
   data = 
@@ -17,4 +16,4 @@ try
       ;
     , 'd=' + JSON.stringify(data)
 catch e
-
+  ;
