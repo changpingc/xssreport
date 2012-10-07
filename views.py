@@ -13,6 +13,7 @@ def hello():
 @app.route('/img/', methods=['GET', ])
 def img():
     data = request.args.get('d', None)
+
     if data is None:
         return Response("missing data", mimetype='image/bmp')
     else:

