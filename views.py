@@ -59,5 +59,5 @@ def upload():
 @app.after_request
 def after_request(response):
     response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+    # response.headers.add('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
     return response
