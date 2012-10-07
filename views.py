@@ -32,13 +32,29 @@ def img():
         return Response("ok", mimetype='image/bmp')
 
 
-# @app.route('/upload/', methods=['POST', ])
-# def upload():
-#     data = request.form.get('d', None)
-#     if data is None:
-#         return "missing data"
-#     else:
-#         row = Upload.create(data=data, is_xhr=request.is_xhr,
-#             headers=unicode(request.headers),
-#             remote_ip=request.headers.get('X-Forwarded-For', request.remote_addr))
-#         return "ok"
+@app.route('/upload/', methods=['POST', ])
+def upload():
+    data = request.form.get('d', None)
+
+    if data is None:
+        return Response("missing data")
+    else:
+        try:
+            j = json.loads(data)
+        except Exception as e:
+            return Response("Cannot parse: %s" % e)
+
+        url = j.get('url', '')
+        cookie = j.get('cookie', '')
+
+        row = Upload.create(data=data, is_xhr=request.is_xhr,
+            headers=unicode(request.headers),
+            url=url, cookie=cookie, useragent=request.user_agent.string,
+            remote_ip=request.headers.get('X-Forwarded-For', request.remote_addr))
+        return Response("ok")
+
+
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response

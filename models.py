@@ -30,10 +30,10 @@ class UploadResource(RestResource):
         del data['is_xhr']
 
         h = request.args.get('headers', None)
-        if h is not None:
+        if h:
             del data['headers']
         d = request.args.get('data', None)
-        if d is not None:
+        if d:
             del data['data']
 
         try:
