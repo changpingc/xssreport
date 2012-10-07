@@ -22,7 +22,7 @@ class RawUploadResource(RestResource):
     def prepare_data(self, obj, data):
         d = data.get('data', '')
         try:
-            j = json.loads()
+            j = json.loads(d)
         except Exception as e:
             logging.info("Cannot parse JSON '%s': %s" % (d, e))
             return None
