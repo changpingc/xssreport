@@ -6,6 +6,7 @@ from flask_peewee.rest import RestAPI, RestResource
 from flask import request
 import json
 import logging
+import string
 
 
 class Upload(db.Model):
@@ -29,11 +30,12 @@ class UploadResource(RestResource):
     def prepare_data(self, obj, data):
         del data['is_xhr']
 
-        h = request.args.get('headers', '')
-        if len(h):
+        show_options = map(string.lower,
+            filter(len, request.args.get('show', '').split(',')))
+        print show_options
+        if "headers" not in show_options:
             del data['headers']
-        d = request.args.get('data', '')
-        if len(d):
+        if "data" not in show_options:
             del data['data']
 
         j = json.loads(obj.data)
