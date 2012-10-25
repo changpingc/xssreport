@@ -3,8 +3,10 @@ from flask_peewee.db import Database
 import urlparse
 import os
 
-if 'HEROKU_POSTGRESQL_BROWN_URL' in os.environ:
-    url = urlparse.urlparse(os.environ['HEROKU_POSTGRESQL_BROWN_URL'])
+# remote:qGiqVrK0HoVa1GNxh8kX5sJUV9nyDL
+
+if 'EXTERNAL_DB_URL' in os.environ:
+    url = urlparse.urlparse(os.environ['EXTERNAL_DB_URL'])
 
     DATABASE = {
         'engine': 'peewee.PostgresqlDatabase',
@@ -12,8 +14,9 @@ if 'HEROKU_POSTGRESQL_BROWN_URL' in os.environ:
         'password': url.password,
         'host': url.hostname,
         'port': url.port,
-        'name': url.path[1:]
+        'name': url.path[1:],
     }
+    print "Using Postgresql!"
 else:
     DATABASE = {
         'name': 'xssreport.db',
