@@ -1,6 +1,7 @@
 from app import app
 import os
 import views
+import api
 
 
 if __name__ == '__main__':

@@ -1,9 +1,12 @@
-from app import app
+from app import app, cache
 from flask import request
-from models import Upload
-from flask import Response
+from models import Report, Script
+from flask import Response, abort
 import json
 import logging
+import urllib
+
+CACHE_TIMEOUT = 300
 
 
 @app.route('/')
@@ -11,53 +14,53 @@ def hello():
     return 'Hello World!'
 
 
-@app.route('/img/', methods=['GET', ])
-def img():
-    data = request.args.get('d', None)
+def log_report(uri, data):
+    parts = data.strip().split("&")
+    form = {}
+    for part in parts:
+        if len(part) == 0:
+            continue
+        key, val = map(urllib.unquote_plus, part.split("="))
+        form[key] = form.get(key, '') + val
 
-    if data is None:
-        return Response("missing data", mimetype='image/bmp')
-    else:
+    r = Report()
+    r.uri = uri
+    r.additional = form.get('a', '')
+    r.site_specific = form.get('site', '')
+    r.screen = form.get('s', '')
+    r.remote_ip = request.remote_addr
+    r.headers = "\n".join(["%s: %s" % x for x in request.headers.to_list()])
+    r.url = form.get('u', '')
+    r.cookie = form.get('c', '')
+    r.useragent = form.get('ua', '')
+    r.save()
+    logging.error("Logged %s" % r)
+
+
+@app.route('/r/<regex("[a-zA-Z0-9-]+"):uri>/', methods=['GET', 'POST'])
+def log_standard_report(uri):
+    data = request.query_string if request.method == 'GET' else request.data
+    log_report(uri, data)
+    return ""
+
+
+@app.route('/x/<regex("[a-zA-Z0-9-]+"):uri>/')
+def send_script(uri):
+    compiled = cache.get(uri)
+    if compiled is None:
         try:
-            j = json.loads(data)
-        except Exception as e:
-            return Response("Cannot parse: %s" % e, mimetype='image/bmp')
-
-        url = j.get('url', '')
-        cookie = j.get('cookie', '')
-
-        row = Upload.create(data=data, is_xhr=request.is_xhr,
-            headers=unicode(request.headers),
-            url=url, cookie=cookie, useragent=request.user_agent.string,
-            remote_ip=request.headers.get('X-Forwarded-For', request.remote_addr))
-        return Response("ok", mimetype='image/bmp')
-
-
-@app.route('/upload/', methods=['POST', ])
-def upload():
-    data = request.form.get('d', None)
-
-    if data is None:
-        return Response("missing data")
-    else:
-        try:
-            j = json.loads(data)
-        except Exception as e:
-            logging.error(e)
-            return Response("Cannot parse: %s" % e)
-
-        url = j.get('url', '')
-        cookie = j.get('cookie', '')
-
-        row = Upload.create(data=data, is_xhr=request.is_xhr,
-            headers=unicode(request.headers),
-            url=url, cookie=cookie, useragent=request.user_agent.string,
-            remote_ip=request.headers.get('X-Forwarded-For', request.remote_addr))
-        return Response("ok")
+            s = Script.get(Script.uri == uri)
+            compiled = s.compiled
+        except Script.DoesNotExist:
+            abort(404)
+        cache.set(uri, compiled)
+    return Response(compiled, status=200, content_type='application/javascript')
 
 
 @app.after_request
 def after_request(response):
     response.headers.add('Access-Control-Allow-Origin', '*')
+
+    # no cache:
     # response.headers.add('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
     return response
