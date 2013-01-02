@@ -68,6 +68,8 @@ def send_script_without_slash(uri):
 
 @app.after_request
 def after_request(response):
+    response.headers.add('Access-Control-Allow-Methods', 'POST, GET, PUT, DELETE, OPTIONS')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
     response.headers.add('Access-Control-Allow-Origin', '*')
 
     # no cache:
