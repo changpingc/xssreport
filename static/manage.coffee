@@ -206,7 +206,7 @@ $ ->
 
         if model and confirm 'Are you sure to delete "' + model.get('uri') + '"?'
           model.destroy success: =>
-              @collection.fetch()
+            @collection.goTo(@collection.currentPage)
 
       duplicateScript: (e) =>
         e.preventDefault()
@@ -233,7 +233,7 @@ $ ->
 
       refresh: (e) =>
         e.preventDefault()
-        @collection.fetch()
+        @collection.goTo(@collection.currentPage)
 
       render: =>
         @$el.empty()
@@ -251,7 +251,7 @@ $ ->
       initialize: =>
         @template = _.template $('#reports-list-template').text()
         @collection.on "reset", @render
-        @collection.fetch()
+        @collection.goTo(@collection.currentPage)
 
       previousPage: (e) =>
         e.preventDefault()

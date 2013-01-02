@@ -391,7 +391,7 @@
           if (model && confirm('Are you sure to delete "' + model.get('uri') + '"?')) {
             return model.destroy({
               success: function() {
-                return _this.collection.fetch();
+                return _this.collection.goTo(_this.collection.currentPage);
               }
             });
           }
@@ -430,7 +430,7 @@
 
         ScriptsListView.prototype.refresh = function(e) {
           e.preventDefault();
-          return this.collection.fetch();
+          return this.collection.goTo(this.collection.currentPage);
         };
 
         ScriptsListView.prototype.render = function() {
@@ -468,7 +468,7 @@
         ReportsListView.prototype.initialize = function() {
           this.template = _.template($('#reports-list-template').text());
           this.collection.on("reset", this.render);
-          return this.collection.fetch();
+          return this.collection.goTo(this.collection.currentPage);
         };
 
         ReportsListView.prototype.previousPage = function(e) {
