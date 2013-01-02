@@ -193,7 +193,7 @@
         };
 
         ScriptEditView.prototype.constructLongURL = function() {
-          return "http://xssreport.herokuapp.com/x/" + this.model.get('uri');
+          return "http://xssreport.herokuapp.com/x/" + this.model.get('uri') + '/';
         };
 
         ScriptEditView.prototype.createShortURL = function(service) {

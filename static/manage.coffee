@@ -76,7 +76,7 @@ $ ->
         "click a.shorten-google"  :   "shortenGoogle"
 
       constructLongURL : =>
-        "http://xssreport.herokuapp.com/x/" + @model.get('uri')
+        "http://xssreport.herokuapp.com/x/" + @model.get('uri') + '/'
 
       createShortURL : (service) =>
         window.XSSReport.app.shorten @constructLongURL(), service, (result) =>
