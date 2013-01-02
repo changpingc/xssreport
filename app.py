@@ -17,6 +17,7 @@ SECRET_KEY = 'ogIiTdbqCslr7g5zwvmA7smpwh4ZTYUAL7g2ossNhV5u8VR\
 FLd7e7L3xflb4Ll6dAEONUoe54mdrbdjQqlbdNeBm3ap37i98JP4K'
 
 app = Flask(__name__)
+# app.config['DEBUG'] = False
 app.config['DATABASE'] = DATABASE
 db = Database(app)
 cache = SimpleCache()
