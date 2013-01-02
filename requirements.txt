@@ -1,10 +1,11 @@
 Flask==0.9
 Jinja2==2.6
+MySQL-python==1.2.4
 WTForms==1.0.2
 Werkzeug==0.8.3
 distribute==0.6.28
-flask-peewee==0.5.6
-peewee==1.0.0
+peewee==2.0.5
 psycopg2==2.4.5
+simplejson==3.0.3
 wsgiref==0.1.2
-wtf-peewee==0.1.5
+wtf-peewee==0.2.0
