@@ -36,3 +36,4 @@ class Script(db.Model):
 
 Report.create_table(fail_silently=True)
 Script.create_table(fail_silently=True)
+
