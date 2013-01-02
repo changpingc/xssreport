@@ -44,7 +44,6 @@ def log_standard_report(uri):
     return ""
 
 
-@app.route('/x/<regex("[a-zA-Z0-9-]+"):uri>/')
 def send_script(uri):
     compiled = cache.get(uri)
     if compiled is None:
@@ -53,8 +52,18 @@ def send_script(uri):
             compiled = s.compiled
         except Script.DoesNotExist:
             abort(404)
-        cache.set(uri, compiled)
+        cache.set(uri, compiled, timeout=CACHE_TIMEOUT)
     return Response(compiled, status=200, content_type='application/javascript')
+
+
+@app.route('/x/<regex("[a-zA-Z0-9-]+"):uri>/')
+def send_script_with_slash(uri):
+    return send_script(uri)
+
+
+@app.route('/x/<regex("[a-zA-Z0-9-]+"):uri>')
+def send_script_without_slash(uri):
+    return send_script(uri)
 
 
 @app.after_request
