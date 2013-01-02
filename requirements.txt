@@ -6,7 +6,6 @@ Werkzeug==0.8.3
 distribute==0.6.28
 -e git+http://github.com/fredj/flask-jsonify.git@5e20dd2774eb99abe354158a79dced0f9c72c9ab#egg=flask_jsonify-dev
 -e git://github.com/coleifer/flask-peewee.git@50809072330988279cd67c6564975650a2ea7476#egg=flask_peewee-dev
-google-appengine==1.5.1
 peewee==2.0.5
 psycopg2==2.4.5
 simplejson==3.0.3
