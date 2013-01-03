@@ -11,12 +11,12 @@ $ ->
 
       hasNextPage: =>
         if @response_meta
-          return @response_meta.next.length > 0
+          return @response_meta.previous.length > 0
         return false
 
       hasPreviousPage: =>
         if @response_meta
-          return @response_meta.previous.length > 0
+          return @response_meta.next.length > 0
         return false
 
     class @ScriptModel extends Backbone.Model
@@ -109,11 +109,11 @@ $ ->
 
       save : (e) =>
         e.preventDefault()
+        @model.set("source", @editor.getValue())
+        @model.set("compiled", @compiled_view.getValue())
         @model.set("name", @$el.find("input#name").val())
         @model.set("uri", @$el.find("input#uri").val())
         @model.set("short_url", @$el.find("input#short-url").val())
-        @model.set("source", @editor.getValue())
-        @model.set("compiled", @compiled_view.getValue())
         @model.save null,
           error: (jqXHR, textStatus, errorThrown) =>
             console.log(textStatus)
@@ -121,13 +121,14 @@ $ ->
             @$el.find('#error').text(errorThrown).show()
           success: (data, textStatus, jqXHR) =>
             window.XSSReport.app.showMessage("Saved.")
-            @model.fetch null,
-              error: (jqXHR, textStatus, errorThrown) =>
-                console.log(textStatus)
-                console.log(errorThrown)
-                @$el.find('#error').text(errorThrown).show()
-              success: (data, textStatus, jqXHR) =>
-                @$el.find('#error').hide()
+            window.XSSReport.app.navigate("scripts/edit/" + @model.get("id"))
+            # @model.fetch null,
+            #   error: (jqXHR, textStatus, errorThrown) =>
+            #     console.log(textStatus)
+            #     console.log(errorThrown)
+            #     @$el.find('#error').text(errorThrown).show()
+            #   success: (data, textStatus, jqXHR) =>
+            #     @$el.find('#error').hide()
 
       saveSourceToLocalStorage : =>
         content = @editor.getValue()
@@ -153,10 +154,9 @@ $ ->
         @$el.find(".CodeMirror-scroll").hover -> 
           $(@).get(0).style.cursor = "text"
 
-        _.delay =>
+        _.defer =>
           @editor.setValue @model.get("source")
           @compiled_view.setValue @model.get("compiled")
-        , 200
 
     class @ScriptsListView extends Backbone.View
       tagName: 'div'
@@ -167,6 +167,7 @@ $ ->
         "click a.use-script"          :   "useScript"
         "click a.remove-script"       :   "removeScript"
         "click a.duplicate-script"    :   "duplicateScript"
+        "click a.show-reports"        :   "showReports"
         "click a.previous-page"       :   "previousPage"
         "click a.next-page"           :   "nextPage"
         "click a.add-script"          :   "createNewScript"
@@ -216,6 +217,12 @@ $ ->
         new_model = new ScriptModel(_.omit(model.toJSON(), "id"))
         window.XSSReport.app.navigate("scripts/new")
         window.XSSReport.app.newScript(new_model)
+
+      showReports: (e) =>
+        e.preventDefault()
+        model_id = parseInt($(event.target).parents("tr").data("id"))
+        model = @collection.get model_id
+        window.XSSReport.app.navigate("reports/" + model.get("uri"), trigger: true)
 
       previousPage: (e) =>
         e.preventDefault()
@@ -273,15 +280,17 @@ $ ->
         "scripts"           :  "showScripts"
         "scripts/new"       :  "newScript"
         "scripts/edit/:id"  :  "editScript"
-        "reports/:uri" :  "showReports"
+        "reports/:uri"      :  "showReports"
         ""                  :  "redirectDefault"
 
       initialize: =>
         @$el = $('.app')
         @$el.ajaxStart =>
-          @$el.spin("large", "white")
+          $.blockUI(message: null)
+          $('body').spin("large", "black")
         @$el.ajaxStop =>
-          @$el.spin(false);
+          $('body').spin(false)
+          $.unblockUI()
 
         # fix Backbone's lack of trailing slash. 
         @$el.ajaxSend (e, jqxhr, settings) =>
@@ -291,6 +300,7 @@ $ ->
       showView: (@view) =>
         @$el.empty()
         @$el.append(@view.el)
+        @hideMessage()
       
       showScripts: =>
         collection = new ScriptCollection()
@@ -322,6 +332,9 @@ $ ->
 
       showMessage: (msg, timeout) =>
         $('.global-flash').text(msg).show()
+
+      hideMessage: =>
+        $('.global-flash').hide()
 
       shorten: (long, service, @callback) =>
         if service == "google"

@@ -1,35 +1,42 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
-  <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/js/bootstrap.min.js"></script>
-  <script src="//cdn.jsdelivr.net/codemirror/2.36/codemirror.js"></script>
-  <script src="//cdn.jsdelivr.net/codemirror/2.36/util/loadmode.js"></script>
-  <script src="//cdn.jsdelivr.net/codemirror/2.36/util/runmode.js"></script>
-  <script src="//cdn.jsdelivr.net/codemirror/2.36/util/simple-hint.js"></script>
-  <script src="//cdn.jsdelivr.net/codemirror/2.36/util/javascript-hint.js"></script>
-  <script src="http://codemirror.net/mode/javascript/javascript.js"></script>
-  <script src="http://codemirror.net/mode/coffeescript/coffeescript.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.3/underscore-min.js"></script>
-  <script src="http://backbonejs.org/backbone.js"></script>
-  <script src="https://raw.github.com/addyosmani/backbone.paginator/master/dist/backbone.paginator.min.js"></script>
-  <script src="http://jashkenas.github.com/coffee-script/extras/coffee-script.js"></script>
-  <script src="http://fgnass.github.com/spin.js/dist/spin.min.js"></script>
-  <script src="https://gist.github.com/raw/1290439/ce7face0309bdb265244e8483ce91dcf86e8cb14/jquery.spin.js"></script>
-  <script src="http://softwaremaniacs.org/media/soft/highlight/highlight.pack.js"></script>
-  <script src="https://raw.github.com/Trenker/Browser-UglifyJS/master/build/uglifyjs.1.2.5.min.js"></script>
-  <!-- <link href="http://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.0.4/css/bootstrap.min.css" rel="stylesheet"> -->
-  <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/css/bootstrap-combined.min.css" rel="stylesheet">
-  <!-- <link href="//netdna.bootstrapcdn.com/bootswatch/2.1.1/spruce/bootstrap.min.css" rel="stylesheet"> -->
+  <script src="http://gs.ccp.li/xssreport/assets/jquery.1.8.3.min.js"></script>
+  <script src="http://gs.ccp.li/xssreport/assets/bootstrap/js/bootstrap.2.2.2.min.js"></script>
+  <script src="http://gs.ccp.li/xssreport/assets/codemirror.3.0/lib/codemirror.js"></script>
+  <script src="http://gs.ccp.li/xssreport/assets/codemirror.3.0/lib/util/loadmode.js"></script>
+  <script src="http://gs.ccp.li/xssreport/assets/codemirror.3.0/lib/util/runmode.js"></script>
+  <script src="http://gs.ccp.li/xssreport/assets/codemirror.3.0/lib/util/simple-hint.js"></script>
+  <script src="http://gs.ccp.li/xssreport/assets/codemirror.3.0/lib/util/javascript-hint.js"></script>
+  <script src="http://gs.ccp.li/xssreport/assets/codemirror.3.0/mode/javascript/javascript.js"></script>
+  <script src="http://gs.ccp.li/xssreport/assets/codemirror.3.0/mode/coffeescript/coffeescript.js"></script>
+  <script src="http://gs.ccp.li/xssreport/assets/underscore.1.4.3.min.js"></script>
+  <script src="http://gs.ccp.li/xssreport/assets/backbone.0.9.9.js"></script>
+  <script src="http://gs.ccp.li/xssreport/assets/backbone.paginator.0.1.54.js"></script>
+  <script src="http://gs.ccp.li/xssreport/assets/coffee-script.1.4.0.js"></script>
+  <script src="http://gs.ccp.li/xssreport/assets/spin.1.2.7.js"></script>
+  <script src="http://gs.ccp.li/xssreport/assets/jquery.spin.js"></script>
+  <script src="http://gs.ccp.li/xssreport/assets/highlight.7.3.min.js"></script>
+  <script src="http://gs.ccp.li/xssreport/assets/uglifyjs.1.2.5.min.js"></script>
+  <script src="http://gs.ccp.li/xssreport/assets/uglifyjs.1.2.5.min.js"></script>
+  <script src="http://gs.ccp.li/xssreport/assets/jquery.blockUI.2.54.js"></script>
+  <link href="http://gs.ccp.li/xssreport/assets/highlightjs.default.7.3.min.css" rel="stylesheet">
+  <link href="http://gs.ccp.li/xssreport/assets/bootstrap/css/bootstrap-combined.2.2.2.min.css" rel="stylesheet">
   <!-- <link href="//netdna.bootstrapcdn.com/bootswatch/2.1.1/cosmo/bootstrap.min.css" rel="stylesheet"> -->
-  <link href="http://cdn.jsdelivr.net/codemirror/2.36/util/simple-hint.css" rel="stylesheet">
-  <link href="//cdn.jsdelivr.net/codemirror/2.36/codemirror.css" rel="stylesheet">
-  <script src="manage.js"></script>
+  <link href="http://gs.ccp.li/xssreport/assets/codemirror.3.0/lib/util/simple-hint.css" rel="stylesheet">
+  <link href="http://gs.ccp.li/xssreport/assets/codemirror.3.0/lib/codemirror.css" rel="stylesheet">
+  <script src="/static/manage.js"></script>
 </head>
 <body>
+  <style type="text/css">
+  .td {
+    max-width: 300px;
+    word-wrap: break-word;
+  }
+  </style>
   <script type="text/underscore-template" id="script-edit-template">
     <form class="form-horizontal"><fieldset>
-      <div class="row">
+      <div class="row"><div class="span12">
         <legend>Edit your XSS script.</legend>
         <div class="control-group">
           <label class="control-label" for="name">Name</label>
@@ -60,7 +67,7 @@
               </ul>
           </div>
         </div>
-      </div>
+      </div></div>
       <div class="row">
         <div class="span7">
           <textarea class="code-editor"></textarea>
@@ -117,6 +124,7 @@
                     <li><a class="edit-script" href="#"><i class="icon-pencil"></i> Edit</a></li>
                     <li><a class="remove-script" href="#"><i class="icon-trash"></i> Delete</a></li>
                     <li><a class="duplicate-script" href="#"><i class="icon-file"></i> Duplicate</a></li>
+                    <li><a class="show-reports" href="#"><i class="icon-list"></i> Show Reports</a></li>
                   </ul>
                 </div>
               </td>
@@ -186,11 +194,11 @@
       </div>
       <div class="app" style="min-height: 400px;">
       </div>
-      <div class="row footer">
+      <div class="row footer"><div class="span12">
         <div class="muted" align="middle">
           <p>Copyright</p>
         </div>
-      </div>
+      </div></div>
     </div>
   </div>
 </body>

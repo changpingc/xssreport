@@ -56,6 +56,15 @@ def send_script(uri):
     return Response(compiled, status=200, content_type='application/javascript')
 
 
+def serve_static(path):
+    try:
+        with open(path, 'rb') as f:
+            data = f.read()
+        return data
+    except IOError:
+        abort(404)
+
+
 @app.route('/x/<regex("[a-zA-Z0-9-]+"):uri>/')
 def send_script_with_slash(uri):
     return send_script(uri)
@@ -64,6 +73,11 @@ def send_script_with_slash(uri):
 @app.route('/x/<regex("[a-zA-Z0-9-]+"):uri>')
 def send_script_without_slash(uri):
     return send_script(uri)
+
+
+@app.route('/manage/')
+def serve_manage_page():
+    return serve_static('static/manage.html')
 
 
 @app.after_request

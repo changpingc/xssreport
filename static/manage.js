@@ -29,14 +29,14 @@
 
         PaginatedCollection.prototype.hasNextPage = function() {
           if (this.response_meta) {
-            return this.response_meta.next.length > 0;
+            return this.response_meta.previous.length > 0;
           }
           return false;
         };
 
         PaginatedCollection.prototype.hasPreviousPage = function() {
           if (this.response_meta) {
-            return this.response_meta.previous.length > 0;
+            return this.response_meta.next.length > 0;
           }
           return false;
         };
@@ -239,11 +239,11 @@
         ScriptEditView.prototype.save = function(e) {
           var _this = this;
           e.preventDefault();
+          this.model.set("source", this.editor.getValue());
+          this.model.set("compiled", this.compiled_view.getValue());
           this.model.set("name", this.$el.find("input#name").val());
           this.model.set("uri", this.$el.find("input#uri").val());
           this.model.set("short_url", this.$el.find("input#short-url").val());
-          this.model.set("source", this.editor.getValue());
-          this.model.set("compiled", this.compiled_view.getValue());
           return this.model.save(null, {
             error: function(jqXHR, textStatus, errorThrown) {
               console.log(textStatus);
@@ -252,16 +252,7 @@
             },
             success: function(data, textStatus, jqXHR) {
               window.XSSReport.app.showMessage("Saved.");
-              return _this.model.fetch(null, {
-                error: function(jqXHR, textStatus, errorThrown) {
-                  console.log(textStatus);
-                  console.log(errorThrown);
-                  return _this.$el.find('#error').text(errorThrown).show();
-                },
-                success: function(data, textStatus, jqXHR) {
-                  return _this.$el.find('#error').hide();
-                }
-              });
+              return window.XSSReport.app.navigate("scripts/edit/" + _this.model.get("id"));
             }
           });
         };
@@ -297,10 +288,10 @@
           this.$el.find(".CodeMirror-scroll").hover(function() {
             return $(this).get(0).style.cursor = "text";
           });
-          return _.delay(function() {
+          return _.defer(function() {
             _this.editor.setValue(_this.model.get("source"));
             return _this.compiled_view.setValue(_this.model.get("compiled"));
-          }, 200);
+          });
         };
 
         return ScriptEditView;
@@ -320,6 +311,8 @@
           this.nextPage = __bind(this.nextPage, this);
 
           this.previousPage = __bind(this.previousPage, this);
+
+          this.showReports = __bind(this.showReports, this);
 
           this.duplicateScript = __bind(this.duplicateScript, this);
 
@@ -342,6 +335,7 @@
           "click a.use-script": "useScript",
           "click a.remove-script": "removeScript",
           "click a.duplicate-script": "duplicateScript",
+          "click a.show-reports": "showReports",
           "click a.previous-page": "previousPage",
           "click a.next-page": "nextPage",
           "click a.add-script": "createNewScript",
@@ -405,6 +399,16 @@
           new_model = new ScriptModel(_.omit(model.toJSON(), "id"));
           window.XSSReport.app.navigate("scripts/new");
           return window.XSSReport.app.newScript(new_model);
+        };
+
+        ScriptsListView.prototype.showReports = function(e) {
+          var model, model_id;
+          e.preventDefault();
+          model_id = parseInt($(event.target).parents("tr").data("id"));
+          model = this.collection.get(model_id);
+          return window.XSSReport.app.navigate("reports/" + model.get("uri"), {
+            trigger: true
+          });
         };
 
         ScriptsListView.prototype.previousPage = function(e) {
@@ -502,6 +506,8 @@
         function MainApp() {
           this.shorten = __bind(this.shorten, this);
 
+          this.hideMessage = __bind(this.hideMessage, this);
+
           this.showMessage = __bind(this.showMessage, this);
 
           this.redirectDefault = __bind(this.redirectDefault, this);
@@ -532,10 +538,14 @@
           var _this = this;
           this.$el = $('.app');
           this.$el.ajaxStart(function() {
-            return _this.$el.spin("large", "white");
+            $.blockUI({
+              message: null
+            });
+            return $('body').spin("large", "black");
           });
           this.$el.ajaxStop(function() {
-            return _this.$el.spin(false);
+            $('body').spin(false);
+            return $.unblockUI();
           });
           return this.$el.ajaxSend(function(e, jqxhr, settings) {
             if (!settings.url.endswith("/")) {
@@ -547,7 +557,8 @@
         MainApp.prototype.showView = function(view) {
           this.view = view;
           this.$el.empty();
-          return this.$el.append(this.view.el);
+          this.$el.append(this.view.el);
+          return this.hideMessage();
         };
 
         MainApp.prototype.showScripts = function() {
@@ -601,6 +612,10 @@
 
         MainApp.prototype.showMessage = function(msg, timeout) {
           return $('.global-flash').text(msg).show();
+        };
+
+        MainApp.prototype.hideMessage = function() {
+          return $('.global-flash').hide();
         };
 
         MainApp.prototype.shorten = function(long, service, callback) {
