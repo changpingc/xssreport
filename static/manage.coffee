@@ -130,7 +130,7 @@ $ ->
         @model.set("short_url", @$el.find("input#short-url").val())
         @model.save null,
           success: (data, textStatus, jqXHR) =>
-            XSSReport.showMessage("Saved.", "success")
+            XSSReport.app.show "Saved.", "success"
             XSSReport.navigate("scripts/edit/" + @model.get("id"))
 
       saveSourceToLocalStorage : =>

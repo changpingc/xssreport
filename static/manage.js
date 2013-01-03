@@ -272,7 +272,7 @@
           this.model.set("short_url", this.$el.find("input#short-url").val());
           return this.model.save(null, {
             success: function(data, textStatus, jqXHR) {
-              XSSReport.showMessage("Saved.", "success");
+              XSSReport.app.show("Saved.", "success");
               return XSSReport.navigate("scripts/edit/" + _this.model.get("id"));
             }
           });
