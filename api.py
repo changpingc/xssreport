@@ -2,28 +2,22 @@ from flask_peewee.rest import RestAPI, RestResource, Authentication
 from flask_peewee.serializer import Serializer
 from app import app, db
 from models import Report, Script
-from flask import request
+from flask import request, session
 from flaskext.jsonify import jsonify
 from peewee import *
 
 
-# class RestResourceWithCount(RestResource):
-#     def get_request_metadata(self, paginated_query):
-#         ret = RestResource.get_request_metadata(self, paginated_query)
-#         print paginated_query.query.sql()
-#         return ret
-
-
-class PublicRestResource(RestResource):
+class SessionAuthResource(RestResource):
     def authorize(self):
         return True
+        # return session.get('magic', '') == 'a'
 
 
-class ScriptResource(PublicRestResource):
+class ScriptResource(SessionAuthResource):
     pass
 
 
-class ReportResource(PublicRestResource):
+class ReportResource(SessionAuthResource):
     paginate_by = 100
 
     def get_query(self):

@@ -13,12 +13,11 @@ DATABASE = {
     'passwd': os.environ['DB_PASS'],
 }
 
-SECRET_KEY = 'ogIiTdbqCslr7g5zwvmA7smpwh4ZTYUAL7g2ossNhV5u8VR\
-FLd7e7L3xflb4Ll6dAEONUoe54mdrbdjQqlbdNeBm3ap37i98JP4K'
 
 app = Flask(__name__)
 # app.config['DEBUG'] = False
 app.config['DATABASE'] = DATABASE
+app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
 if os.environ.get('DEBUG', '') == 'DEBUG':
     app.config['DEBUG'] = True
 else:
