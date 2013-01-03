@@ -19,6 +19,11 @@ FLd7e7L3xflb4Ll6dAEONUoe54mdrbdjQqlbdNeBm3ap37i98JP4K'
 app = Flask(__name__)
 # app.config['DEBUG'] = False
 app.config['DATABASE'] = DATABASE
+if os.environ.get('DEBUG', '') == 'DEBUG':
+    app.config['DEBUG'] = True
+else:
+    app.config['DEBUG'] = False
+
 db = Database(app)
 cache = SimpleCache()
 
