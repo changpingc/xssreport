@@ -273,7 +273,7 @@
           return this.model.save(null, {
             success: function(data, textStatus, jqXHR) {
               XSSReport.app.show("Saved.", "success");
-              return XSSReport.navigate("scripts/edit/" + _this.model.get("id"));
+              return XSSReport.app.navigate("scripts/edit/" + _this.model.get("id"));
             }
           });
         };

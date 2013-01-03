@@ -131,7 +131,7 @@ $ ->
         @model.save null,
           success: (data, textStatus, jqXHR) =>
             XSSReport.app.show "Saved.", "success"
-            XSSReport.navigate("scripts/edit/" + @model.get("id"))
+            XSSReport.app.navigate("scripts/edit/" + @model.get("id"))
 
       saveSourceToLocalStorage : =>
         content = @editor.getValue()
