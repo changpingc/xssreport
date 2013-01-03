@@ -39,6 +39,12 @@
           return false;
         };
 
+        PaginatedCollection.prototype.server_api = {
+          'page': function() {
+            return this.currentPage;
+          }
+        };
+
         PaginatedCollection.prototype.paginator_ui = {
           firstPage: 1,
           currentPage: 1,
@@ -94,12 +100,6 @@
           url: '/api/script/'
         };
 
-        ScriptCollection.prototype.server_api = {
-          'page': function() {
-            return this.currentPage;
-          }
-        };
-
         return ScriptCollection;
 
       })(this.PaginatedCollection);
@@ -137,13 +137,6 @@
           url: '/api/report/'
         };
 
-        ReportCollection.prototype.paginator_ui = {
-          firstPage: 1,
-          currentPage: 1,
-          perPage: 100,
-          totalPages: 10
-        };
-
         ReportCollection.prototype.server_api = {
           'page': function() {
             return this.currentPage;
@@ -154,6 +147,30 @@
         };
 
         return ReportCollection;
+
+      })(this.PaginatedCollection);
+      this.ReportURICollection = (function(_super) {
+
+        __extends(ReportURICollection, _super);
+
+        function ReportURICollection() {
+          return ReportURICollection.__super__.constructor.apply(this, arguments);
+        }
+
+        ReportURICollection.prototype.paginator_core = {
+          type: 'GET',
+          dataType: 'json',
+          url: '/api/report/'
+        };
+
+        ReportURICollection.prototype.server_api = {
+          'page': function() {
+            return this.currentPage;
+          },
+          'method': 'listURI'
+        };
+
+        return ReportURICollection;
 
       })(this.PaginatedCollection);
       this.ScriptEditView = (function(_super) {
@@ -254,14 +271,9 @@
           this.model.set("uri", this.$el.find("input#uri").val());
           this.model.set("short_url", this.$el.find("input#short-url").val());
           return this.model.save(null, {
-            error: function(jqXHR, textStatus, errorThrown) {
-              console.log(textStatus);
-              console.log(errorThrown);
-              return _this.$el.find('#error').text(errorThrown).show();
-            },
             success: function(data, textStatus, jqXHR) {
-              window.XSSReport.app.showMessage("Saved.");
-              return window.XSSReport.app.navigate("scripts/edit/" + _this.model.get("id"));
+              XSSReport.showMessage("Saved.", "success");
+              return XSSReport.navigate("scripts/edit/" + _this.model.get("id"));
             }
           });
         };
@@ -314,6 +326,8 @@
         function ScriptsListView() {
           this.render = __bind(this.render, this);
 
+          this.goBack = __bind(this.goBack, this);
+
           this.refresh = __bind(this.refresh, this);
 
           this.updateNewScript = __bind(this.updateNewScript, this);
@@ -355,9 +369,10 @@
           "click a.previous-page": "previousPage",
           "click a.next-page": "nextPage",
           "click a.add-script": "createNewScript",
-          "click a.refresh": "refresh",
+          "click .refresh": "refresh",
           "click .save-new-script": "saveNewScript",
-          "click .create-custom-script": "createCustomScript"
+          "click .create-custom-script": "createCustomScript",
+          "click a.go-back": "goBack"
         };
 
         ScriptsListView.prototype.initialize = function() {
@@ -511,6 +526,11 @@
           return this.collection.goTo(this.collection.currentPage);
         };
 
+        ScriptsListView.prototype.goBack = function(e) {
+          e.preventDefault();
+          return window.history.back();
+        };
+
         ScriptsListView.prototype.render = function() {
           this.$el.empty();
           this.$el.append(this.template({
@@ -530,6 +550,12 @@
         function ReportsListView() {
           this.render = __bind(this.render, this);
 
+          this.refresh = __bind(this.refresh, this);
+
+          this.goBack = __bind(this.goBack, this);
+
+          this.filterReports = __bind(this.filterReports, this);
+
           this.nextPage = __bind(this.nextPage, this);
 
           this.previousPage = __bind(this.previousPage, this);
@@ -540,7 +566,10 @@
 
         ReportsListView.prototype.events = {
           "click a.previous-page": "previousPage",
-          "click a.next-page": "nextPage"
+          "click a.next-page": "nextPage",
+          "click a.go-back": "goBack",
+          "click .filter-reports": "filterReports",
+          "click .refresh": "refresh"
         };
 
         ReportsListView.prototype.initialize = function() {
@@ -563,11 +592,42 @@
           }
         };
 
+        ReportsListView.prototype.filterReports = function(e) {
+          var args, f, filter, _i, _len, _ref;
+          e.preventDefault();
+          filter = this.$el.find("input#filter").val();
+          try {
+            _ref = filter.split("&");
+            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+              f = _ref[_i];
+              args = f.split("=");
+              this.collection.server_api[args[0]] = args[1];
+            }
+          } catch (e) {
+            return XSSReport.app.show('Cannot parse filter "' + filter + '"', "error");
+          }
+          XSSReport.app.show("Parameters: " + JSON.stringify(_.omit(this.collection.server_api, "page")), "info");
+          return this.collection.goTo(1);
+        };
+
+        ReportsListView.prototype.goBack = function(e) {
+          e.preventDefault();
+          return window.history.back();
+        };
+
+        ReportsListView.prototype.refresh = function(e) {
+          e.preventDefault();
+          return this.collection.goTo(this.collection.currentPage);
+        };
+
         ReportsListView.prototype.render = function() {
+          var filterTmp;
+          filterTmp = this.$el.find("input#filter").val() || "";
           this.$el.empty();
           this.$el.append(this.template({
             items: this.collection.toJSON()
           }));
+          this.$el.find("input#filter").val(filterTmp);
           this.$el.find(".next-page").parent().toggleClass("disabled", !this.collection.hasNextPage());
           return this.$el.find(".previous-page").parent().toggleClass("disabled", !this.collection.hasPreviousPage());
         };
@@ -582,6 +642,18 @@
         function HomeView() {
           this.render = __bind(this.render, this);
 
+          this.refresh = __bind(this.refresh, this);
+
+          this.nextPage = __bind(this.nextPage, this);
+
+          this.previousPage = __bind(this.previousPage, this);
+
+          this.goReports = __bind(this.goReports, this);
+
+          this.showScripts = __bind(this.showScripts, this);
+
+          this.showReports = __bind(this.showReports, this);
+
           this.initialize = __bind(this.initialize, this);
           return HomeView.__super__.constructor.apply(this, arguments);
         }
@@ -591,12 +663,84 @@
         HomeView.prototype.className = 'home';
 
         HomeView.prototype.initialize = function() {
-          return this.template = _.template($('#home-template').text());
+          var _this = this;
+          this.template = _.template($('#home-template').text());
+          this.collection = new ReportURICollection();
+          this.ajaxOptions = {
+            global: false,
+            beforeSend: function() {
+              return _this.$el.find(".spin-area").spin("large", "black");
+            },
+            complete: function() {
+              return _this.$el.find(".spin-area").spin(false);
+            }
+          };
+          this.collection.on("reset", this.render);
+          return _.delay(function() {
+            return _this.collection.goTo(1, _this.ajaxOptions);
+          }, 100);
+        };
+
+        HomeView.prototype.events = {
+          "click a.show-reports": "showReports",
+          "click a.show-scripts": "showScripts",
+          "click .go-reports": "goReports",
+          "click a.previous-page": "previousPage",
+          "click a.next-page": "nextPage",
+          "click .refresh": "refresh"
+        };
+
+        HomeView.prototype.showReports = function(e) {
+          var uri;
+          e.preventDefault();
+          uri = $(event.target).parents("tr").data("uri");
+          return XSSReport.app.navigate("reports/" + uri, {
+            trigger: true
+          });
+        };
+
+        HomeView.prototype.showScripts = function(e) {
+          e.preventDefault();
+          return XSSReport.app.navigate("scripts", {
+            trigger: true
+          });
+        };
+
+        HomeView.prototype.goReports = function(e) {
+          var uri;
+          e.preventDefault();
+          uri = $.trim(this.$el.find("input#uri").val());
+          return XSSReport.app.navigate("reports/" + uri, {
+            trigger: true
+          });
+        };
+
+        HomeView.prototype.previousPage = function(e) {
+          e.preventDefault();
+          if (this.collection.hasPreviousPage()) {
+            return this.collection.requestPreviousPage(this.ajaxOptions);
+          }
+        };
+
+        HomeView.prototype.nextPage = function(e) {
+          e.preventDefault();
+          if (this.collection.hasNextPage()) {
+            return this.collection.requestNextPage(this.ajaxOptions);
+          }
+        };
+
+        HomeView.prototype.refresh = function(e) {
+          e.preventDefault();
+          return this.collection.goTo(this.collection.currentPage, this.ajaxOptions);
         };
 
         HomeView.prototype.render = function() {
           this.$el.empty();
-          return this.$el.append(this.template());
+          this.$el.append(this.template({
+            items: this.collection.toJSON()
+          }));
+          this.$el.find(".next-page").parent().toggleClass("disabled", !this.collection.hasNextPage());
+          return this.$el.find(".previous-page").parent().toggleClass("disabled", !this.collection.hasPreviousPage());
         };
 
         return HomeView;
@@ -609,15 +753,15 @@
         function MainApp() {
           this.shorten = __bind(this.shorten, this);
 
-          this.hideMessage = __bind(this.hideMessage, this);
+          this.hide = __bind(this.hide, this);
 
-          this.showMessage = __bind(this.showMessage, this);
+          this.show = __bind(this.show, this);
 
           this.redirectDefault = __bind(this.redirectDefault, this);
 
           this.showHome = __bind(this.showHome, this);
 
-          this.showReports = __bind(this.showReports, this);
+          this.showReportsForURI = __bind(this.showReportsForURI, this);
 
           this.editScript = __bind(this.editScript, this);
 
@@ -636,7 +780,7 @@
           "scripts": "showScripts",
           "scripts/new": "newScript",
           "scripts/edit/:id": "editScript",
-          "reports/:uri": "showReports",
+          "reports/:uri": "showReportsForURI",
           "*path": "redirectDefault"
         };
 
@@ -653,8 +797,11 @@
             $('#center').spin(false);
             return $.unblockUI();
           });
+          this.$el.ajaxError(function() {
+            return _this.show("ajax error!", "error");
+          });
           return this.$el.ajaxSend(function(e, jqxhr, settings) {
-            if (!settings.url.endswith("/")) {
+            if (!settings.url.endswith("/") && settings.method !== "GET") {
               return settings.url += "/";
             }
           });
@@ -664,7 +811,7 @@
           this.view = view;
           this.$el.empty();
           this.$el.append(this.view.el);
-          return this.hideMessage();
+          return this.hide();
         };
 
         MainApp.prototype.showScripts = function() {
@@ -699,7 +846,7 @@
           return this.showView(view);
         };
 
-        MainApp.prototype.showReports = function(uri) {
+        MainApp.prototype.showReportsForURI = function(uri) {
           var collection, view;
           collection = new ReportCollection();
           collection.uri = uri;
@@ -723,11 +870,15 @@
           });
         };
 
-        MainApp.prototype.showMessage = function(msg, timeout) {
-          return $('.global-flash').text(msg).show();
+        MainApp.prototype.show = function(msg, type) {
+          if (!type) {
+            type = "success";
+          }
+          $('.alert-text').text(msg);
+          return $('.global-flash').addClass("alert-" + type).show();
         };
 
-        MainApp.prototype.hideMessage = function() {
+        MainApp.prototype.hide = function() {
           return $('.global-flash').hide();
         };
 

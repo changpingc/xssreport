@@ -1,7 +1,16 @@
 body {
   padding-top: 20px;
 }
-td, th {
-  max-width: 300px;
+table {
+  max-width: 100%;
+}
+td.stop-overflow, th.stop-overflow {
+  max-width: 250px;
   word-wrap: break-word;
+}
+.overflow-scroll {
+  overflow: scroll;
+}
+.spin-area {
+  min-height: 400px;
 }

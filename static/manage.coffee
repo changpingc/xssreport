@@ -18,6 +18,9 @@ $ ->
           return @response_meta.previous.length > 0
         return false
 
+      server_api:
+        'page': -> @currentPage
+
       paginator_ui:
         firstPage: 1
         currentPage: 1
@@ -44,8 +47,6 @@ $ ->
         type: 'GET'
         dataType: 'json'
         url: '/api/script/'
-      server_api:
-        'page': -> @currentPage
 
     class @ReportModel extends Backbone.Model
       urlRoot: '/api/report/'
@@ -60,14 +61,18 @@ $ ->
         type: 'GET'
         dataType: 'json'
         url: '/api/report/'
-      paginator_ui:
-        firstPage: 1
-        currentPage: 1
-        perPage: 100
-        totalPages: 10
       server_api:
         'page': -> @currentPage
         'uri': -> @uri
+
+    class @ReportURICollection extends @PaginatedCollection
+      paginator_core:
+        type: 'GET'
+        dataType: 'json'
+        url: '/api/report/'
+      server_api:
+        'page': -> @currentPage
+        'method': 'listURI'
 
     class @ScriptEditView extends Backbone.View
       tagName: 'div'
@@ -124,13 +129,9 @@ $ ->
         @model.set("uri", @$el.find("input#uri").val())
         @model.set("short_url", @$el.find("input#short-url").val())
         @model.save null,
-          error: (jqXHR, textStatus, errorThrown) =>
-            console.log(textStatus)
-            console.log(errorThrown)
-            @$el.find('#error').text(errorThrown).show()
           success: (data, textStatus, jqXHR) =>
-            window.XSSReport.app.showMessage("Saved.")
-            window.XSSReport.app.navigate("scripts/edit/" + @model.get("id"))
+            XSSReport.showMessage("Saved.", "success")
+            XSSReport.navigate("scripts/edit/" + @model.get("id"))
 
       saveSourceToLocalStorage : =>
         content = @editor.getValue()
@@ -173,9 +174,10 @@ $ ->
         "click a.previous-page"       :   "previousPage"
         "click a.next-page"           :   "nextPage"
         "click a.add-script"          :   "createNewScript"
-        "click a.refresh"             :   "refresh"
+        "click .refresh"               :   "refresh"
         "click .save-new-script"      :   "saveNewScript"
         "click .create-custom-script" :   "createCustomScript"
+        "click a.go-back"             :   "goBack"
 
       initialize: =>
         @template = _.template $('#scripts-list-template').text()
@@ -287,6 +289,10 @@ $ ->
         e.preventDefault()
         @collection.goTo(@collection.currentPage)
 
+      goBack: (e) =>
+        e.preventDefault()
+        window.history.back()
+
       render: =>
         @$el.empty()
         @$el.append @template
@@ -299,6 +305,9 @@ $ ->
       events:
         "click a.previous-page"       :   "previousPage"
         "click a.next-page"           :   "nextPage"
+        "click a.go-back"             :   "goBack"
+        "click .filter-reports"       :   "filterReports"
+        "click .refresh"               :   "refresh"
 
       initialize: =>
         @template = _.template $('#reports-list-template').text()
@@ -314,12 +323,33 @@ $ ->
         e.preventDefault()
         if @collection.hasNextPage()
           @collection.requestNextPage()
-   
+
+      filterReports: (e) =>
+        e.preventDefault()
+        filter = @$el.find("input#filter").val()
+        try
+          for f in filter.split("&")
+            args = f.split("=")
+            @collection.server_api[args[0]] = args[1]
+        catch e
+          return XSSReport.app.show 'Cannot parse filter "' + filter + '"', "error"
+        XSSReport.app.show "Parameters: " + JSON.stringify(_.omit(@collection.server_api, "page")), "info"
+        @collection.goTo(1)
+
+      goBack: (e) =>
+        e.preventDefault()
+        window.history.back()
+ 
+      refresh: (e) =>
+        e.preventDefault()
+        @collection.goTo(@collection.currentPage)
+
       render: =>
+        filterTmp = @$el.find("input#filter").val() || ""
         @$el.empty()
         @$el.append @template
           items: @collection.toJSON()
-
+        @$el.find("input#filter").val filterTmp
         @$el.find(".next-page").parent().toggleClass "disabled", ! @collection.hasNextPage()
         @$el.find(".previous-page").parent().toggleClass "disabled", ! @collection.hasPreviousPage()
 
@@ -328,10 +358,60 @@ $ ->
       className: 'home'
       initialize: =>
         @template = _.template $('#home-template').text()
+        @collection = new ReportURICollection()
+        @ajaxOptions = 
+            global: false
+            beforeSend: =>
+              @$el.find(".spin-area").spin("large", "black")
+            complete: =>
+              @$el.find(".spin-area").spin(false)
+        @collection.on "reset", @render
+        _.delay =>
+          @collection.goTo 1, @ajaxOptions
+        , 100
+
+      events:
+        "click a.show-reports"         :   "showReports"
+        "click a.show-scripts"         :   "showScripts"
+        "click .go-reports"            :   "goReports"
+        "click a.previous-page"        :   "previousPage"
+        "click a.next-page"            :   "nextPage"
+        "click .refresh"                :   "refresh"
+
+      showReports: (e) =>
+        e.preventDefault()
+        uri = $(event.target).parents("tr").data("uri")
+        XSSReport.app.navigate("reports/" + uri, trigger: true)
+
+      showScripts: (e) =>
+        e.preventDefault()
+        XSSReport.app.navigate("scripts", trigger: true)
+
+      goReports: (e) =>
+        e.preventDefault()
+        uri = $.trim @$el.find("input#uri").val()
+        XSSReport.app.navigate("reports/" + uri, trigger: true)
+
+      previousPage: (e) =>
+        e.preventDefault()
+        if @collection.hasPreviousPage()
+          @collection.requestPreviousPage(@ajaxOptions)
+
+      nextPage: (e) =>
+        e.preventDefault()
+        if @collection.hasNextPage()
+          @collection.requestNextPage(@ajaxOptions)
+
+      refresh: (e) =>
+        e.preventDefault()
+        @collection.goTo(@collection.currentPage, @ajaxOptions)
 
       render: =>
         @$el.empty()
-        @$el.append @template()
+        @$el.append @template(items: @collection.toJSON())
+
+        @$el.find(".next-page").parent().toggleClass "disabled", ! @collection.hasNextPage()
+        @$el.find(".previous-page").parent().toggleClass "disabled", ! @collection.hasPreviousPage()
 
     class @MainApp extends Backbone.Router
       routes:
@@ -339,7 +419,7 @@ $ ->
         "scripts"           :  "showScripts"
         "scripts/new"       :  "newScript"
         "scripts/edit/:id"  :  "editScript"
-        "reports/:uri"      :  "showReports"
+        "reports/:uri"      :  "showReportsForURI"
         "*path"             :  "redirectDefault"
 
       initialize: =>
@@ -350,16 +430,18 @@ $ ->
         @$el.ajaxStop =>
           $('#center').spin(false)
           $.unblockUI()
+        @$el.ajaxError =>
+          @show "ajax error!", "error"
 
         # fix Backbone's lack of trailing slash. 
         @$el.ajaxSend (e, jqxhr, settings) =>
-          if not settings.url.endswith("/")
+          if not settings.url.endswith("/") and settings.method != "GET"
             settings.url += "/"
 
       showView: (@view) =>
         @$el.empty()
         @$el.append(@view.el)
-        @hideMessage()
+        @hide()
       
       showScripts: =>
         collection = new ScriptCollection()
@@ -379,7 +461,7 @@ $ ->
         model.fetch()
         @showView(view)
 
-      showReports: (uri) =>
+      showReportsForURI: (uri) =>
         collection = new ReportCollection()
         collection.uri = uri
         view = new ReportsListView(collection: collection)
@@ -394,10 +476,13 @@ $ ->
       redirectDefault: =>
         @navigate("home", trigger: true)
 
-      showMessage: (msg, timeout) =>
-        $('.global-flash').text(msg).show()
+      show: (msg, type) =>
+        if not type
+          type = "success"
+        $('.alert-text').text(msg)
+        $('.global-flash').addClass("alert-" + type).show()
 
-      hideMessage: =>
+      hide: =>
         $('.global-flash').hide()
 
       shorten: (long, service, @callback) =>

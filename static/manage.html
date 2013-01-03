@@ -30,19 +30,6 @@
   <link href="/static/manage.css" rel="stylesheet">
 </head>
 <body>
-  <script type="text/underscore-template" id="home-template">
-    <div class="row">
-      <div class="span6">
-        <button class="btn btn-large show-scripts">Scripts</button>
-      </div>
-      <div class="span6">
-        <button class="btn btn-large show-reports">Reports</button>
-        <% if (typeof uris !== 'undefined') { _.each(uris, function(uri) { %>
-          
-        <% }); } %>
-      </div>
-    </div>
-  </script>
   <script type="text/underscore-template" id="script-edit-template">
     <form class="form-horizontal"><fieldset>
       <div class="row"><div class="span12">
@@ -98,6 +85,9 @@
   </script>
   <script type="text/underscore-template" id="scripts-list-template">
     <div class="row clearfix"><div class="span12">
+      <div class="pull-left">
+        <a class="btn btn-small go-back" href="#"><i class="icon-arrow-left"></i> Go Back</a>
+      </div>
       <div class="pull-right">
         <a class="btn btn-small refresh" href="#"><i class="icon-refresh"></i> Refresh</a>
         <a class="btn btn-small add-script" href="#"><i class="icon-plus"></i> Create New Script</a>
@@ -199,6 +189,19 @@
   </script>
   <script type="text/underscore-template" id="reports-list-template">
     <div class="row"><div class="span12">
+      <div class="pull-left">
+        <a class="btn btn-small go-back" href="#"><i class="icon-arrow-left"></i> Go Back</a>
+        <button class="offset1 btn btn-small refresh" href="#"><i class="icon-refresh"></i> Refresh</button>
+      </div>
+      <div class="pull-right">
+        <div class="input-prepend input-append">
+          <span class="add-on">Filter </span>
+          <input class="span5" id="filter" type="text">
+          <button class="btn btn-primary filter-reports" type="button">Go!</button>
+        </div>
+      </div>
+    </div></div>
+    <div class="row"><div class="span12 overflow-scroll">
       <table class="table table-hover table-condensed">
         <thead>
           <tr>
@@ -214,11 +217,11 @@
           <% _.each(items, function(item) { %>
             <tr data-id="<%- item.id %>">
               <td><%- item.id %></td>
-              <td><%- item.url %></td>
+              <td class="stop-overflow"><%- item.url %></td>
               <td><%- XSSReport.formatDate(item.created) %></td>
               <td><%- item.remote_ip %></a></td>
-              <td><%- item.cookie %></td>
-              <td><%- item.useragent %></td>
+              <td class="stop-overflow"><%- item.cookie %></td>
+              <td class="stop-overflow"><%- item.useragent %></td>
             </tr>
           <% }); %>
         </tbody>
@@ -228,6 +231,55 @@
         <li class="next"><a href="#" class="next-page">Next →</a></li>
       </ul>
     </div></div>
+  </script>
+  <script type="text/underscore-template" id="home-template">
+  <div class="row"><div class="span12">
+    <div class="pull-left">
+      <a class="btn show-scripts" href="#">Show Scripts</a>
+      <button class="offset1 btn btn-small refresh" href="#"><i class="icon-refresh"></i> Refresh</button>
+    </div>
+    <div class="pull-right">
+      <div class="input-prepend input-append">
+        <span class="add-on">URI: </span>
+        <input class="span2" id="appendedInputButton" type="text" id="uri">
+        <button class="btn btn-primary go-reports" type="button">Go!</button>
+      </div>
+    </div>
+  </div></div>
+  <div class="row">
+    <div class="span12">
+      <div class="spin-area">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>URI</th>
+              <th>Count</th>
+              <th>Last Report</th>
+              <th>Options</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% _.each(items, function(item) { %>
+              <tr data-uri="<%- item.uri %>">
+                <td><%- item.uri %></td>
+                <td><%- item.count %></td>
+                <td><%- XSSReport.formatDate(item.latest) %></a></td>
+                <td class="stop-overflow">
+                  <div class="btn-group">
+                    <a class="btn show-reports" href="#"><i class="icon-user icon-info-sign"></i> Show Reports</a>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+      <ul class="pager">
+        <li class="previous"><a href="#" class="previous-page">← Previous</a></li>
+        <li class="next"><a href="#" class="next-page">Next →</a></li>
+      </ul>
+    </div>
+  </div>
   </script>
   <script type="text/underscore-template" id="xss-general-template"># cookie
 d = 'c=' + encodeURIComponent(document.cookie)
@@ -255,9 +307,9 @@ xmlhttp.send(d)
     <div class="">
       <div class="alert alert-success global-flash" style="display:none; ">
         <a class="close">×</a>
-        <strong>Success</strong>
+        <div class="alert-text"></div>
       </div>
-      <div class="app" style="min-height: 400px;">
+      <div class="app spin-area">
       </div>
       <div class="row footer"><div class="span12">
         <div class="muted" align="middle">

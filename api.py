@@ -19,24 +19,23 @@ class PublicRestResource(RestResource):
         return True
 
 
-class ReportResource(PublicRestResource):
-    paginate_by = 100
-
-
 class ScriptResource(PublicRestResource):
     pass
 
 
-class ReportURIResource(PublicRestResource):
-    fields = ['latest', 'count', 'uri']
+class ReportResource(PublicRestResource):
+    paginate_by = 100
 
     def get_query(self):
-        return Report.select(Report.uri, fn.Count(Report.id).alias(
+        if request.args.get('method', '') == "listURI":
+            # monkey patch fields
+            self._fields = {self.model: ['latest', 'count', 'uri']}
+            return Report.select(Report.uri, fn.Count(Report.id).alias(
                 'count'), fn.Max(Report.created).alias('latest')).group_by(
-                Report.uri).order_by(fn.Max(Report.created))
-
-    def get_api_name(self):
-        return "report/uri"
+                Report.uri).order_by(fn.Max(Report.created).desc())
+        else:
+            self._fields = {self.model: self.model._meta.get_field_names()}
+            return PublicRestResource.get_query(self)
 
 
 # @app.route('/api/report/uri/', methods=['GET', ])
@@ -50,6 +49,5 @@ class ReportURIResource(PublicRestResource):
 
 api = RestAPI(app)
 api.register(Report, ReportResource)
-api.register(Report, ReportURIResource, allowed_methods=['GET'])
 api.register(Script, ScriptResource)
 api.setup()
