@@ -10,7 +10,7 @@ class Report(db.Model):
     screen = TextField(default="")
     remote_ip = CharField(max_length=64, db_index=True)
     headers = TextField(default="")
-    created = DateTimeField(default=datetime.now, db_index=True)
+    created = DateTimeField(default=datetime.utcnow, db_index=True)
     url = TextField(db_index=True)
     cookie = TextField(default="")
     useragent = TextField(default="")
@@ -19,6 +19,9 @@ class Report(db.Model):
     def __unicode__(self):
         return "Report on %s from %s" % (self.url, self.remote_ip)
 
+    class Meta:
+        order_by = ('-created', )
+
 
 class Script(db.Model):
     name = TextField(default="")
@@ -26,14 +29,15 @@ class Script(db.Model):
     short_url = CharField(max_length=1024, default="")
     source = TextField(default="")
     compiled = TextField(default="")
-    created = DateTimeField(default=datetime.now, db_index=True)
-    last_edited = DateTimeField(default=datetime.now, db_index=True)
+    created = DateTimeField(default=datetime.utcnow, db_index=True)
+    last_edited = DateTimeField(default=datetime.utcnow, db_index=True)
 
     def save(self):
-        self.last_edited = datetime.now()
+        self.last_edited = datetime.utcnow()
         super(Script, self).save()
 
+    class Meta:
+        order_by = ('-created', )
 
 Report.create_table(fail_silently=True)
 Script.create_table(fail_silently=True)
-

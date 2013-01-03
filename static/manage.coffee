@@ -4,20 +4,25 @@ $ ->
 
   window.XSSReport = do ->
     class @PaginatedCollection extends Backbone.Paginator.requestPager
-      currentPage: 0
       parse: (response) ->
         @response_meta = response.meta
         return response.objects
 
       hasNextPage: =>
         if @response_meta
-          return @response_meta.previous.length > 0
+          return @response_meta.next.length > 0
         return false
 
       hasPreviousPage: =>
         if @response_meta
-          return @response_meta.next.length > 0
+          return @response_meta.previous.length > 0
         return false
+
+      paginator_ui:
+        firstPage: 1
+        currentPage: 1
+        perPage: 20
+        totalPages: 10
 
     class @ScriptModel extends Backbone.Model
       urlRoot: '/api/script/'
@@ -28,22 +33,26 @@ $ ->
         source: "\n"
         compiled: "\n"
 
+      save : ->
+        @unset("created")
+        @unset("last_edited")
+        super
+
     class @ScriptCollection extends @PaginatedCollection
       model: ScriptModel
       paginator_core:
         type: 'GET'
         dataType: 'json'
         url: '/api/script/'
-      paginator_ui:
-        firstPage: 0
-        currentPage: 0
-        perPage: 20
-        totalPages: 10
       server_api:
         'page': -> @currentPage
 
     class @ReportModel extends Backbone.Model
       urlRoot: '/api/report/'
+
+      save : ->
+        @unset("created")
+        super
 
     class @ReportCollection extends @PaginatedCollection
       model: ReportModel
@@ -52,8 +61,8 @@ $ ->
         dataType: 'json'
         url: '/api/report/'
       paginator_ui:
-        firstPage: 0
-        currentPage: 0
+        firstPage: 1
+        currentPage: 1
         perPage: 100
         totalPages: 10
       server_api:
@@ -122,13 +131,6 @@ $ ->
           success: (data, textStatus, jqXHR) =>
             window.XSSReport.app.showMessage("Saved.")
             window.XSSReport.app.navigate("scripts/edit/" + @model.get("id"))
-            # @model.fetch null,
-            #   error: (jqXHR, textStatus, errorThrown) =>
-            #     console.log(textStatus)
-            #     console.log(errorThrown)
-            #     @$el.find('#error').text(errorThrown).show()
-            #   success: (data, textStatus, jqXHR) =>
-            #     @$el.find('#error').hide()
 
       saveSourceToLocalStorage : =>
         content = @editor.getValue()
@@ -149,11 +151,11 @@ $ ->
           lineNumbers: true
           mode: "javascript"
           readOnly: true
+          lineWrapping: true
         if @compiled_view.getValue().length == 0
           @compiled_view.setValue("\n")
         @$el.find(".CodeMirror-scroll").hover -> 
           $(@).get(0).style.cursor = "text"
-
         _.defer =>
           @editor.setValue @model.get("source")
           @compiled_view.setValue @model.get("compiled")
@@ -172,12 +174,16 @@ $ ->
         "click a.next-page"           :   "nextPage"
         "click a.add-script"          :   "createNewScript"
         "click a.refresh"             :   "refresh"
+        "click .save-new-script"      :   "saveNewScript"
+        "click .create-custom-script" :   "createCustomScript"
 
       initialize: =>
         @template = _.template $('#scripts-list-template').text()
         @usage_template = _.template $('#script-usage-template').text()
+        @new_script_template = _.template $('#new-script-template').text()
+        @xss_script_template = _.template $('#xss-general-template').text()
         @collection.on 'reset', @render
-        @collection.goTo(0)
+        @collection.goTo(1)
 
       editScript: (e) =>
         e.preventDefault()
@@ -214,7 +220,7 @@ $ ->
         model_id = parseInt($(event.target).parents("tr").data("id"))
         model = @collection.get model_id
 
-        new_model = new ScriptModel(_.omit(model.toJSON(), "id"))
+        new_model = new ScriptModel(_.omit(model.toJSON(), "id", "created", "last_edited"))
         window.XSSReport.app.navigate("scripts/new")
         window.XSSReport.app.newScript(new_model)
 
@@ -227,16 +233,55 @@ $ ->
       previousPage: (e) =>
         e.preventDefault()
         if @collection.hasPreviousPage()
-          @collection.requestPrevious()
+          @collection.requestPreviousPage()
 
       nextPage: (e) =>
         e.preventDefault()
-        if @collection.hasPreviousPage()
-          @collection.requestNext()
+        if @collection.hasNextPage()
+          @collection.requestNextPage()
 
       createNewScript: (e) =>
         e.preventDefault()
-        window.XSSReport.app.navigate("scripts/new", trigger: true)
+        modal = @$el.find(".modal")
+        modal.empty()
+        modal.append @new_script_template()
+        modal.find('pre code').each (i, e) ->
+          hljs.highlightBlock(e)
+        modal.modal()
+        modal.find('input#uri').bind 'input', @updateNewScript
+
+      createCustomScript: (e) =>
+        e.preventDefault()
+        @$el.find(".modal").one 'hidden', =>
+          window.XSSReport.app.navigate("scripts/new", trigger: true)
+        @$el.find(".modal").modal('hide')
+
+      saveNewScript: (e) =>
+        e.preventDefault()
+        c = @xss_script_template uri: @$el.find("input#uri").val()
+        j = CoffeeScript.compile(c)
+        u = uglify(j)
+
+        model = new ScriptModel()
+        model.set 'name', @$el.find("input#name").val()
+        model.set 'uri', @$el.find("input#uri").val()
+        model.set 'compiled', u
+        model.set 'source', c
+        model.save null,
+          success: =>
+            @$el.find(".modal").one 'hidden', =>
+              @collection.goTo(@collection.currentPage)
+            @$el.find(".modal").modal('hide')
+          error: =>
+            @$el.find(".modal").find(".error").text("Error!").show()
+
+      updateNewScript: (e) =>
+        e.preventDefault()
+        @$el.find("code#new-script-code").text(
+          @xss_script_template uri: @$el.find("input#uri").val()
+        )
+        @$el.find('pre code').each (i, e) ->
+          hljs.highlightBlock(e)
 
       refresh: (e) =>
         e.preventDefault()
@@ -258,38 +303,52 @@ $ ->
       initialize: =>
         @template = _.template $('#reports-list-template').text()
         @collection.on "reset", @render
-        @collection.goTo(@collection.currentPage)
+        @collection.goTo(1)
 
       previousPage: (e) =>
         e.preventDefault()
         if @collection.hasPreviousPage()
-          @collection.requestPrevious()
+          @collection.requestPreviousPage()
 
       nextPage: (e) =>
         e.preventDefault()
-        if @collection.hasPreviousPage()
-          @collection.requestNext()
+        if @collection.hasNextPage()
+          @collection.requestNextPage()
    
       render: =>
         @$el.empty()
         @$el.append @template
           items: @collection.toJSON()
 
+        @$el.find(".next-page").parent().toggleClass "disabled", ! @collection.hasNextPage()
+        @$el.find(".previous-page").parent().toggleClass "disabled", ! @collection.hasPreviousPage()
+
+    class @HomeView extends Backbone.View
+      tagName: 'div'
+      className: 'home'
+      initialize: =>
+        @template = _.template $('#home-template').text()
+
+      render: =>
+        @$el.empty()
+        @$el.append @template()
+
     class @MainApp extends Backbone.Router
       routes:
+        "home"              :  "showHome"
         "scripts"           :  "showScripts"
         "scripts/new"       :  "newScript"
         "scripts/edit/:id"  :  "editScript"
         "reports/:uri"      :  "showReports"
-        ""                  :  "redirectDefault"
+        "*path"             :  "redirectDefault"
 
       initialize: =>
         @$el = $('.app')
         @$el.ajaxStart =>
           $.blockUI(message: null)
-          $('body').spin("large", "black")
+          $('#center').spin("large", "black")
         @$el.ajaxStop =>
-          $('body').spin(false)
+          $('#center').spin(false)
           $.unblockUI()
 
         # fix Backbone's lack of trailing slash. 
@@ -327,8 +386,13 @@ $ ->
         view.render()
         @showView(view)
 
+      showHome: =>
+        view = new HomeView()
+        view.render()
+        @showView view
+
       redirectDefault: =>
-        @navigate("scripts", trigger: true)
+        @navigate("home", trigger: true)
 
       showMessage: (msg, timeout) =>
         $('.global-flash').text(msg).show()
@@ -350,4 +414,7 @@ $ ->
               @callback("error")
 
     app: new @MainApp()
+    formatDate: (d) ->
+      moment(d, 'YYYY-MM-DD HH:mm:ss').add({'hours' : 8}).format('YYYY-MM-DD HH:mm')
+
   Backbone.history.start({pushState: false})

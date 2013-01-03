@@ -20,8 +20,6 @@
           return PaginatedCollection.__super__.constructor.apply(this, arguments);
         }
 
-        PaginatedCollection.prototype.currentPage = 0;
-
         PaginatedCollection.prototype.parse = function(response) {
           this.response_meta = response.meta;
           return response.objects;
@@ -29,16 +27,23 @@
 
         PaginatedCollection.prototype.hasNextPage = function() {
           if (this.response_meta) {
-            return this.response_meta.previous.length > 0;
+            return this.response_meta.next.length > 0;
           }
           return false;
         };
 
         PaginatedCollection.prototype.hasPreviousPage = function() {
           if (this.response_meta) {
-            return this.response_meta.next.length > 0;
+            return this.response_meta.previous.length > 0;
           }
           return false;
+        };
+
+        PaginatedCollection.prototype.paginator_ui = {
+          firstPage: 1,
+          currentPage: 1,
+          perPage: 20,
+          totalPages: 10
         };
 
         return PaginatedCollection;
@@ -64,6 +69,12 @@
           };
         };
 
+        ScriptModel.prototype.save = function() {
+          this.unset("created");
+          this.unset("last_edited");
+          return ScriptModel.__super__.save.apply(this, arguments);
+        };
+
         return ScriptModel;
 
       })(Backbone.Model);
@@ -81,13 +92,6 @@
           type: 'GET',
           dataType: 'json',
           url: '/api/script/'
-        };
-
-        ScriptCollection.prototype.paginator_ui = {
-          firstPage: 0,
-          currentPage: 0,
-          perPage: 20,
-          totalPages: 10
         };
 
         ScriptCollection.prototype.server_api = {
@@ -109,6 +113,11 @@
 
         ReportModel.prototype.urlRoot = '/api/report/';
 
+        ReportModel.prototype.save = function() {
+          this.unset("created");
+          return ReportModel.__super__.save.apply(this, arguments);
+        };
+
         return ReportModel;
 
       })(Backbone.Model);
@@ -129,8 +138,8 @@
         };
 
         ReportCollection.prototype.paginator_ui = {
-          firstPage: 0,
-          currentPage: 0,
+          firstPage: 1,
+          currentPage: 1,
           perPage: 100,
           totalPages: 10
         };
@@ -280,7 +289,8 @@
           this.compiled_view = CodeMirror.fromTextArea(this.$el.find('.compiled')[0], {
             lineNumbers: true,
             mode: "javascript",
-            readOnly: true
+            readOnly: true,
+            lineWrapping: true
           });
           if (this.compiled_view.getValue().length === 0) {
             this.compiled_view.setValue("\n");
@@ -305,6 +315,12 @@
           this.render = __bind(this.render, this);
 
           this.refresh = __bind(this.refresh, this);
+
+          this.updateNewScript = __bind(this.updateNewScript, this);
+
+          this.saveNewScript = __bind(this.saveNewScript, this);
+
+          this.createCustomScript = __bind(this.createCustomScript, this);
 
           this.createNewScript = __bind(this.createNewScript, this);
 
@@ -339,14 +355,18 @@
           "click a.previous-page": "previousPage",
           "click a.next-page": "nextPage",
           "click a.add-script": "createNewScript",
-          "click a.refresh": "refresh"
+          "click a.refresh": "refresh",
+          "click .save-new-script": "saveNewScript",
+          "click .create-custom-script": "createCustomScript"
         };
 
         ScriptsListView.prototype.initialize = function() {
           this.template = _.template($('#scripts-list-template').text());
           this.usage_template = _.template($('#script-usage-template').text());
+          this.new_script_template = _.template($('#new-script-template').text());
+          this.xss_script_template = _.template($('#xss-general-template').text());
           this.collection.on('reset', this.render);
-          return this.collection.goTo(0);
+          return this.collection.goTo(1);
         };
 
         ScriptsListView.prototype.editScript = function(e) {
@@ -396,7 +416,7 @@
           e.preventDefault();
           model_id = parseInt($(event.target).parents("tr").data("id"));
           model = this.collection.get(model_id);
-          new_model = new ScriptModel(_.omit(model.toJSON(), "id"));
+          new_model = new ScriptModel(_.omit(model.toJSON(), "id", "created", "last_edited"));
           window.XSSReport.app.navigate("scripts/new");
           return window.XSSReport.app.newScript(new_model);
         };
@@ -414,21 +434,75 @@
         ScriptsListView.prototype.previousPage = function(e) {
           e.preventDefault();
           if (this.collection.hasPreviousPage()) {
-            return this.collection.requestPrevious();
+            return this.collection.requestPreviousPage();
           }
         };
 
         ScriptsListView.prototype.nextPage = function(e) {
           e.preventDefault();
-          if (this.collection.hasPreviousPage()) {
-            return this.collection.requestNext();
+          if (this.collection.hasNextPage()) {
+            return this.collection.requestNextPage();
           }
         };
 
         ScriptsListView.prototype.createNewScript = function(e) {
+          var modal;
           e.preventDefault();
-          return window.XSSReport.app.navigate("scripts/new", {
-            trigger: true
+          modal = this.$el.find(".modal");
+          modal.empty();
+          modal.append(this.new_script_template());
+          modal.find('pre code').each(function(i, e) {
+            return hljs.highlightBlock(e);
+          });
+          modal.modal();
+          return modal.find('input#uri').bind('input', this.updateNewScript);
+        };
+
+        ScriptsListView.prototype.createCustomScript = function(e) {
+          var _this = this;
+          e.preventDefault();
+          this.$el.find(".modal").one('hidden', function() {
+            return window.XSSReport.app.navigate("scripts/new", {
+              trigger: true
+            });
+          });
+          return this.$el.find(".modal").modal('hide');
+        };
+
+        ScriptsListView.prototype.saveNewScript = function(e) {
+          var c, j, model, u,
+            _this = this;
+          e.preventDefault();
+          c = this.xss_script_template({
+            uri: this.$el.find("input#uri").val()
+          });
+          j = CoffeeScript.compile(c);
+          u = uglify(j);
+          model = new ScriptModel();
+          model.set('name', this.$el.find("input#name").val());
+          model.set('uri', this.$el.find("input#uri").val());
+          model.set('compiled', u);
+          model.set('source', c);
+          return model.save(null, {
+            success: function() {
+              _this.$el.find(".modal").one('hidden', function() {
+                return _this.collection.goTo(_this.collection.currentPage);
+              });
+              return _this.$el.find(".modal").modal('hide');
+            },
+            error: function() {
+              return _this.$el.find(".modal").find(".error").text("Error!").show();
+            }
+          });
+        };
+
+        ScriptsListView.prototype.updateNewScript = function(e) {
+          e.preventDefault();
+          this.$el.find("code#new-script-code").text(this.xss_script_template({
+            uri: this.$el.find("input#uri").val()
+          }));
+          return this.$el.find('pre code').each(function(i, e) {
+            return hljs.highlightBlock(e);
           });
         };
 
@@ -472,31 +546,60 @@
         ReportsListView.prototype.initialize = function() {
           this.template = _.template($('#reports-list-template').text());
           this.collection.on("reset", this.render);
-          return this.collection.goTo(this.collection.currentPage);
+          return this.collection.goTo(1);
         };
 
         ReportsListView.prototype.previousPage = function(e) {
           e.preventDefault();
           if (this.collection.hasPreviousPage()) {
-            return this.collection.requestPrevious();
+            return this.collection.requestPreviousPage();
           }
         };
 
         ReportsListView.prototype.nextPage = function(e) {
           e.preventDefault();
-          if (this.collection.hasPreviousPage()) {
-            return this.collection.requestNext();
+          if (this.collection.hasNextPage()) {
+            return this.collection.requestNextPage();
           }
         };
 
         ReportsListView.prototype.render = function() {
           this.$el.empty();
-          return this.$el.append(this.template({
+          this.$el.append(this.template({
             items: this.collection.toJSON()
           }));
+          this.$el.find(".next-page").parent().toggleClass("disabled", !this.collection.hasNextPage());
+          return this.$el.find(".previous-page").parent().toggleClass("disabled", !this.collection.hasPreviousPage());
         };
 
         return ReportsListView;
+
+      })(Backbone.View);
+      this.HomeView = (function(_super) {
+
+        __extends(HomeView, _super);
+
+        function HomeView() {
+          this.render = __bind(this.render, this);
+
+          this.initialize = __bind(this.initialize, this);
+          return HomeView.__super__.constructor.apply(this, arguments);
+        }
+
+        HomeView.prototype.tagName = 'div';
+
+        HomeView.prototype.className = 'home';
+
+        HomeView.prototype.initialize = function() {
+          return this.template = _.template($('#home-template').text());
+        };
+
+        HomeView.prototype.render = function() {
+          this.$el.empty();
+          return this.$el.append(this.template());
+        };
+
+        return HomeView;
 
       })(Backbone.View);
       this.MainApp = (function(_super) {
@@ -511,6 +614,8 @@
           this.showMessage = __bind(this.showMessage, this);
 
           this.redirectDefault = __bind(this.redirectDefault, this);
+
+          this.showHome = __bind(this.showHome, this);
 
           this.showReports = __bind(this.showReports, this);
 
@@ -527,11 +632,12 @@
         }
 
         MainApp.prototype.routes = {
+          "home": "showHome",
           "scripts": "showScripts",
           "scripts/new": "newScript",
           "scripts/edit/:id": "editScript",
           "reports/:uri": "showReports",
-          "": "redirectDefault"
+          "*path": "redirectDefault"
         };
 
         MainApp.prototype.initialize = function() {
@@ -541,10 +647,10 @@
             $.blockUI({
               message: null
             });
-            return $('body').spin("large", "black");
+            return $('#center').spin("large", "black");
           });
           this.$el.ajaxStop(function() {
-            $('body').spin(false);
+            $('#center').spin(false);
             return $.unblockUI();
           });
           return this.$el.ajaxSend(function(e, jqxhr, settings) {
@@ -604,8 +710,15 @@
           return this.showView(view);
         };
 
+        MainApp.prototype.showHome = function() {
+          var view;
+          view = new HomeView();
+          view.render();
+          return this.showView(view);
+        };
+
         MainApp.prototype.redirectDefault = function() {
-          return this.navigate("scripts", {
+          return this.navigate("home", {
             trigger: true
           });
         };
@@ -644,7 +757,12 @@
 
       })(Backbone.Router);
       return {
-        app: new this.MainApp()
+        app: new this.MainApp(),
+        formatDate: function(d) {
+          return moment(d, 'YYYY-MM-DD HH:mm:ss').add({
+            'hours': 8
+          }).format('YYYY-MM-DD HH:mm');
+        }
       };
     })();
     return Backbone.history.start({

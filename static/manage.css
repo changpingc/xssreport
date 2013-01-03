@@ -1,3 +1,6 @@
+body {
+  padding-top: 20px;
+}
 td, th {
   max-width: 300px;
   word-wrap: break-word;
