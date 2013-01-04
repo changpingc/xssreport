@@ -29,7 +29,7 @@ class ReportResource(SessionAuthResource):
                 Report.uri).order_by(fn.Max(Report.created).desc())
         else:
             self._fields = {self.model: self.model._meta.get_field_names()}
-            return PublicRestResource.get_query(self)
+            return SessionAuthResource.get_query(self)
 
 
 # @app.route('/api/report/uri/', methods=['GET', ])
