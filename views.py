@@ -28,7 +28,7 @@ def log_report(uri, data):
     r.additional = form.get('a', '')
     r.site_specific = form.get('site', '')
     r.screen = form.get('s', '')
-    r.remote_ip = request.access_route
+    r.remote_ip = request.access_route[0]
     r.headers = "\r\n".join(["%s: %s" % x for x in request.headers.to_list()])
     r.url = form.get('u', '')
     r.cookie = form.get('c', '')
