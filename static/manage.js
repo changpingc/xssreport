@@ -660,7 +660,7 @@
           this.$el.find("input#filter").val(filterTmp);
           this.$el.find(".next-page").parent().toggleClass("disabled", !this.collection.hasNextPage());
           this.$el.find(".previous-page").parent().toggleClass("disabled", !this.collection.hasPreviousPage());
-          return this.title('Report for "' + this.collection.server_api.uri() + '"');
+          return this.title('Report for "' + this.collection.uri + '"');
         };
 
         return ReportsListView;
