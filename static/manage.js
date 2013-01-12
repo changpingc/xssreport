@@ -55,6 +55,34 @@
         return PaginatedCollection;
 
       })(Backbone.Paginator.requestPager);
+      this.TitledView = (function(_super) {
+
+        __extends(TitledView, _super);
+
+        function TitledView() {
+          this.title = __bind(this.title, this);
+
+          this.initialize = __bind(this.initialize, this);
+          return TitledView.__super__.constructor.apply(this, arguments);
+        }
+
+        TitledView.prototype.tagName = 'div';
+
+        TitledView.prototype.initialize = function() {
+          return this.pageTitle = "";
+        };
+
+        TitledView.prototype.title = function(newTitle) {
+          if (newTitle) {
+            this.pageTitle = newTitle;
+            this.trigger("change:title", newTitle);
+          }
+          return this.pageTitle;
+        };
+
+        return TitledView;
+
+      })(Backbone.View);
       this.ScriptModel = (function(_super) {
 
         __extends(ScriptModel, _super);
@@ -200,8 +228,6 @@
           return ScriptEditView.__super__.constructor.apply(this, arguments);
         }
 
-        ScriptEditView.prototype.tagName = 'div';
-
         ScriptEditView.prototype.className = 'script-edit-view';
 
         ScriptEditView.prototype.initialize = function() {
@@ -310,15 +336,20 @@
           this.$el.find(".CodeMirror-scroll").hover(function() {
             return $(this).get(0).style.cursor = "text";
           });
-          return _.defer(function() {
+          _.defer(function() {
             _this.editor.setValue(_this.model.get("source"));
             return _this.compiled_view.setValue(_this.model.get("compiled"));
           });
+          if (this.model.id === void 0) {
+            return this.title("Create New Script");
+          } else {
+            return this.title('Edit Script "' + this.model.get('uri') + '"');
+          }
         };
 
         return ScriptEditView;
 
-      })(Backbone.View);
+      })(this.TitledView);
       this.ScriptsListView = (function(_super) {
 
         __extends(ScriptsListView, _super);
@@ -356,8 +387,6 @@
           return ScriptsListView.__super__.constructor.apply(this, arguments);
         }
 
-        ScriptsListView.prototype.tagName = 'div';
-
         ScriptsListView.prototype.className = 'scripts-list-view';
 
         ScriptsListView.prototype.events = {
@@ -381,7 +410,8 @@
           this.new_script_template = _.template($('#new-script-template').text());
           this.xss_script_template = _.template($('#xss-general-template').text());
           this.collection.on('reset', this.render);
-          return this.collection.goTo(1);
+          this.collection.goTo(1);
+          return this.title("Scripts");
         };
 
         ScriptsListView.prototype.editScript = function(e) {
@@ -542,7 +572,7 @@
 
         return ScriptsListView;
 
-      })(Backbone.View);
+      })(this.TitledView);
       this.ReportsListView = (function(_super) {
 
         __extends(ReportsListView, _super);
@@ -629,12 +659,13 @@
           }));
           this.$el.find("input#filter").val(filterTmp);
           this.$el.find(".next-page").parent().toggleClass("disabled", !this.collection.hasNextPage());
-          return this.$el.find(".previous-page").parent().toggleClass("disabled", !this.collection.hasPreviousPage());
+          this.$el.find(".previous-page").parent().toggleClass("disabled", !this.collection.hasPreviousPage());
+          return this.title('Report for "' + this.collection.server_api.uri() + '"');
         };
 
         return ReportsListView;
 
-      })(Backbone.View);
+      })(this.TitledView);
       this.HomeView = (function(_super) {
 
         __extends(HomeView, _super);
@@ -658,12 +689,11 @@
           return HomeView.__super__.constructor.apply(this, arguments);
         }
 
-        HomeView.prototype.tagName = 'div';
-
-        HomeView.prototype.className = 'home';
+        HomeView.prototype.className = 'home-view';
 
         HomeView.prototype.initialize = function() {
           var _this = this;
+          this.title("Home");
           this.template = _.template($('#home-template').text());
           this.collection = new ReportURICollection();
           this.ajaxOptions = {
@@ -745,7 +775,7 @@
 
         return HomeView;
 
-      })(Backbone.View);
+      })(this.TitledView);
       this.MainApp = (function(_super) {
 
         __extends(MainApp, _super);
@@ -808,9 +838,14 @@
         };
 
         MainApp.prototype.showView = function(view) {
+          var _this = this;
           this.view = view;
           this.$el.empty();
           this.$el.append(this.view.el);
+          document.title = this.view.title();
+          this.view.on("change:title", function() {
+            return document.title = _this.view.title();
+          });
           return this.hide();
         };
 

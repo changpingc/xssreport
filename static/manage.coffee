@@ -27,6 +27,17 @@ $ ->
         perPage: 20
         totalPages: 10
 
+    class @TitledView extends Backbone.View
+      tagName: 'div'
+      initialize: =>
+        @pageTitle = ""
+
+      title: (newTitle) =>
+        if newTitle
+          @pageTitle = newTitle
+          @trigger "change:title", newTitle
+        @pageTitle
+
     class @ScriptModel extends Backbone.Model
       urlRoot: '/api/script/'
       defaults: ->
@@ -74,8 +85,7 @@ $ ->
         'page': -> @currentPage
         'method': 'listURI'
 
-    class @ScriptEditView extends Backbone.View
-      tagName: 'div'
+    class @ScriptEditView extends @TitledView
       className: 'script-edit-view'
       initialize: =>
         @template = _.template $('#script-edit-template').text()
@@ -160,9 +170,12 @@ $ ->
         _.defer =>
           @editor.setValue @model.get("source")
           @compiled_view.setValue @model.get("compiled")
+        if @model.id == undefined
+          @title "Create New Script"
+        else
+          @title 'Edit Script "' + @model.get('uri') + '"'
 
-    class @ScriptsListView extends Backbone.View
-      tagName: 'div'
+    class @ScriptsListView extends @TitledView
       className: 'scripts-list-view'
 
       events:
@@ -186,6 +199,7 @@ $ ->
         @xss_script_template = _.template $('#xss-general-template').text()
         @collection.on 'reset', @render
         @collection.goTo(1)
+        @title "Scripts"
 
       editScript: (e) =>
         e.preventDefault()
@@ -301,7 +315,7 @@ $ ->
         @$el.find(".next-page").parent().toggleClass "disabled", ! @collection.hasNextPage()
         @$el.find(".previous-page").parent().toggleClass "disabled", ! @collection.hasPreviousPage()
 
-    class @ReportsListView extends Backbone.View
+    class @ReportsListView extends @TitledView
       events:
         "click a.previous-page"       :   "previousPage"
         "click a.next-page"           :   "nextPage"
@@ -353,10 +367,12 @@ $ ->
         @$el.find(".next-page").parent().toggleClass "disabled", ! @collection.hasNextPage()
         @$el.find(".previous-page").parent().toggleClass "disabled", ! @collection.hasPreviousPage()
 
-    class @HomeView extends Backbone.View
-      tagName: 'div'
-      className: 'home'
+        @title 'Report for "' + @collection.server_api.uri() + '"'
+
+    class @HomeView extends @TitledView
+      className: 'home-view'
       initialize: =>
+        @title "Home"
         @template = _.template $('#home-template').text()
         @collection = new ReportURICollection()
         @ajaxOptions = 
@@ -441,6 +457,9 @@ $ ->
       showView: (@view) =>
         @$el.empty()
         @$el.append(@view.el)
+        document.title = @view.title()
+        @view.on "change:title", =>
+          document.title = @view.title()
         @hide()
       
       showScripts: =>

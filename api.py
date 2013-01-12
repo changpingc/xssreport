@@ -32,15 +32,6 @@ class ReportResource(SessionAuthResource):
             return SessionAuthResource.get_query(self)
 
 
-# @app.route('/api/report/uri/', methods=['GET', ])
-# def listURI():
-#     # return a list of URIs with report counts ordered by latest activity
-#     q = Report.select(Report.uri, fn.Count(Report.id).alias(
-#         'count'), fn.Max(Report.created).alias('latest')).group_by(
-#         Report.uri).order_by(fn.Max(Report.created)).limit(50)
-#     return [{'uri': x.uri, 'count': x.count, 'latest': x.latest} for x in q]
-
-
 api = RestAPI(app)
 api.register(Report, ReportResource)
 api.register(Script, ScriptResource)

