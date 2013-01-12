@@ -367,7 +367,7 @@ $ ->
         @$el.find(".next-page").parent().toggleClass "disabled", ! @collection.hasNextPage()
         @$el.find(".previous-page").parent().toggleClass "disabled", ! @collection.hasPreviousPage()
 
-        @title 'Report for "' + @collection.server_api.uri() + '"'
+        @title 'Report for "' + @collection.uri + '"'
 
     class @HomeView extends @TitledView
       className: 'home-view'
